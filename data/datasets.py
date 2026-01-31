@@ -53,8 +53,12 @@ class CaSiAtmosDataset(Dataset):
             self.blong[t, y, x] * self.sc["blong"],
         ])
 
+        ca = np.asarray(ca, dtype=np.float32)
+        si = np.asarray(si, dtype=np.float32)
+        Y  = np.asarray(Y,  dtype=np.float32)
+
         return (
-            torch.tensor(ca, dtype=torch.float32),
-            torch.tensor(si, dtype=torch.float32),
-            torch.tensor(Y, dtype=torch.float32),
+            torch.from_numpy(ca),
+            torch.from_numpy(si),
+            torch.from_numpy(Y),
         )
