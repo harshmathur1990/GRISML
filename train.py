@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from config import *
-from data.dataset import CaSiAtmosDataset
+from data.datasets import CaSiAtmosDataset
 from utils.split import make_splits
 from models.model import CaSiInversionCNN
 from losses.loss import AtmosLoss
