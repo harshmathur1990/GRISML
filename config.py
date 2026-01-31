@@ -1,4 +1,4 @@
-from pathlib import pathlib
+from pathlib import Path
 
 
 base_path = Path('/mn/stornext/u3/harshm/Documents/Data/GRIS')

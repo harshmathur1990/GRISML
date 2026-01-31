@@ -9,6 +9,7 @@ from models.model import CaSiInversionCNN
 from utils.denormalise import denormalise_output
 
 
+
 # =========================
 #   LOAD INPUT DATA
 # =========================
@@ -66,7 +67,10 @@ def run_inference(ca_fits, si_fits, atm_out_h5, batch_size=1024):
               for yi in range(y)
               for xi in range(x)]
 
-    for i in tqdm(range(0, len(pixels), batch_size)):
+    for i in tqdm(
+        range(0, len(pixels), batch_size),
+        desc="Inference",
+    ):
         batch = pixels[i:i+batch_size]
 
         ca_batch = []
@@ -95,6 +99,7 @@ def run_inference(ca_fits, si_fits, atm_out_h5, batch_size=1024):
 
         for j, (ti, yi, xi) in enumerate(batch):
             out[ti, yi, xi, :] = pred[j]
+
 
     # =========================
     #   DE-NORMALISE & SAVE

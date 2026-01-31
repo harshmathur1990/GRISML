@@ -9,6 +9,7 @@ from utils.split import make_splits
 from models.model import CaSiInversionCNN
 from losses.loss import AtmosLoss
 from utils.early_stopping import EarlyStopping
+from tqdm import tqdm
 
 
 # =========================
@@ -91,11 +92,19 @@ with torch.no_grad():
 # =========================
 for ep in range(EPOCHS):
 
-    # ---- TRAIN ----
+    # =========================
+    #        TRAIN
+    # =========================
     model.train()
     train_loss = 0.0
 
-    for ca, si, y in train_loader:
+    train_pbar = tqdm(
+        train_loader,
+        desc=f"Epoch {ep:03d} [train]",
+        leave=False,
+    )
+
+    for ca, si, y in train_pbar:
         ca = ca.to(device, non_blocking=True)
         si = si.to(device, non_blocking=True)
         y  = y.to(device, non_blocking=True)
@@ -109,15 +118,24 @@ for ep in range(EPOCHS):
         optim.step()
 
         train_loss += loss.item()
+        train_pbar.set_postfix(loss=f"{loss.item():.2e}")
 
     train_loss /= len(train_loader)
 
-    # ---- VALIDATION ----
+    # =========================
+    #      VALIDATION
+    # =========================
     model.eval()
     val_loss = 0.0
 
+    val_pbar = tqdm(
+        val_loader,
+        desc=f"Epoch {ep:03d} [val]  ",
+        leave=False,
+    )
+
     with torch.no_grad():
-        for ca, si, y in val_loader:
+        for ca, si, y in val_pbar:
             ca = ca.to(device, non_blocking=True)
             si = si.to(device, non_blocking=True)
             y  = y.to(device, non_blocking=True)
@@ -126,17 +144,22 @@ for ep in range(EPOCHS):
             loss = criterion(pred, y)
 
             val_loss += loss.item()
+            val_pbar.set_postfix(loss=f"{loss.item():.2e}")
 
     val_loss /= len(val_loader)
 
-    # ---- LOG ----
+    # =========================
+    #        LOGGING
+    # =========================
     print(
         f"Epoch {ep:03d} | "
         f"Train {train_loss:.3e} | "
         f"Val {val_loss:.3e}"
     )
 
-    # ---- EARLY STOP ----
+    # =========================
+    #   EARLY STOPPING
+    # =========================
     if early_stopping.step(val_loss, model):
         print(
             f"Early stopping at epoch {ep} | "
