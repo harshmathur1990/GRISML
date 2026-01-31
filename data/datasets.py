@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 import numpy as np
 import h5py
 from astropy.io import fits
-from config import OUTPUT_SCALES
+from config import OUTPUT_SCALES, STOKES_IDX
 
 
 class CaSiAtmosDataset(Dataset):
@@ -42,13 +42,8 @@ class CaSiAtmosDataset(Dataset):
         t, y, x = self.indices[idx]
 
         # ---- input ----
-        ca = self.ca[t, :, y, x, :]   # (stokes, λ_ca)
-        si = self.si[t, :, y, x, :]   # (stokes, λ_si)
-
-        X = np.concatenate(
-            [ca.reshape(-1), si.reshape(-1)],
-            axis=0
-        )
+        ca = self.ca[t, STOKES_IDX, y, x, :]   # (len(STOKES_IDX), λ_ca)
+        si = self.si[t, STOKES_IDX, y, x, :]   # (len(STOKES_IDX), λ_si)
 
         # ---- output (normalised) ----
         Y = np.concatenate([
@@ -59,6 +54,7 @@ class CaSiAtmosDataset(Dataset):
         ])
 
         return (
-            torch.tensor(X, dtype=torch.float32),
+            torch.tensor(ca, dtype=torch.float32),
+            torch.tensor(si, dtype=torch.float32),
             torch.tensor(Y, dtype=torch.float32),
         )

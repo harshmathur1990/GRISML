@@ -1,5 +1,6 @@
 from pathlib import pathlib
 
+
 base_path = Path('/mn/stornext/u3/harshm/Documents/Data/GRIS')
 data_path = base_path / 'KMeans-Inversions' / 'fulldata_inversions'
 
@@ -22,3 +23,13 @@ OUTPUT_SCALES = {
     "vturb": 1e-5,
     "blong": 1e-4,
 }
+
+# config.py
+
+EARLY_STOPPING_PATIENCE = 10
+CHECKPOINT_PATH = "best_model.pt"
+MIN_DELTA = 0.0   # minimum improvement to count
+
+# Stokes indices:
+# 0 = I, 1 = Q, 2 = U, 3 = V
+STOKES_IDX = [0, 3]
