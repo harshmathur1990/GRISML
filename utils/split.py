@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def make_splits(shape, train_frac, val_frac):
     t, y, x = shape
     idx = [(i,j,k) for i in range(t)
