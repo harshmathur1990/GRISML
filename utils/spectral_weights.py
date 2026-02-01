@@ -1,16 +1,27 @@
 import torch
 
-def build_weight_mask(n_lambda, core_range=None, ignore_range=None,
-                      core_weight=3.0, wing_weight=1.0, ignore_weight=0.0):
+# ============================================================
+# Helper: build wavelength weight mask
+# ============================================================
+def build_weight_mask(
+    n_lambda: int,
+    core_range=None,        # tuple (start, end)
+    ignore_range=None,      # tuple (start, end)
+    core_weight: float = 3.0,
+    wing_weight: float = 1.0,
+    ignore_weight: float = 0.0,
+) -> torch.Tensor:
     """
-    Returns (n_lambda,) tensor
+    Returns a tensor of shape (n_lambda,) containing wavelength weights.
     """
-    w = torch.full((n_lambda,), wing_weight)
+    w = torch.full((n_lambda,), wing_weight, dtype=torch.float32)
 
     if core_range is not None:
-        w[core_range[0]:core_range[1]] = core_weight
+        a, b = core_range
+        w[a:b] = core_weight
 
     if ignore_range is not None:
-        w[ignore_range[0]:ignore_range[1]] = ignore_weight
+        a, b = ignore_range
+        w[a:b] = ignore_weight
 
     return w

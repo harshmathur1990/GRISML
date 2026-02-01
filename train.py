@@ -10,6 +10,8 @@ from utils.split import make_splits
 from models.model import CaSiInversionCNN
 from losses.loss import AtmosLoss
 from utils.early_stopping import EarlyStopping
+from utils.spectral_weights import build_weight_mask
+
 
 
 # ============================================================
@@ -73,7 +75,7 @@ train_idx, val_idx, test_idx = make_splits(
 
 train_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, train_idx)
 val_ds   = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, val_idx)
-
+test_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, test_idx)
 
 # ============================================================
 # 5. SAFE BATCH-SIZE PROBING (OPTIONAL BUT RECOMMENDED)
@@ -124,13 +126,38 @@ val_loader = DataLoader(
     pin_memory=True,
 )
 
+test_loader = DataLoader(
+    test_ds,
+    batch_size=BATCH_SIZE,
+    shuffle=False,      # IMPORTANT
+    pin_memory=True,
+)
+
 
 # ============================================================
 # 7. MODEL
 # ============================================================
+ca_weight = build_weight_mask(
+    n_lambda=CA_N_WAVELENGTH,
+    core_range=CA_CORE_RANGE,
+    core_weight=CORE_WEIGHT,
+    wing_weight=WING_WEIGHT,
+)
+
+si_weight = build_weight_mask(
+    n_lambda=SI_N_WAVELENGTH,
+    core_range=SI_CORE_RANGE,
+    ignore_range=SI_IGNORE_RANGE,
+    core_weight=CORE_WEIGHT,
+    wing_weight=WING_WEIGHT,
+    ignore_weight=IGNORE_WEIGHT,
+)
+
 model = CaSiInversionCNN(
     n_stokes=n_stokes,
     ltau=ltau,
+    ca_weight=ca_weight,
+    si_weight=si_weight,
 ).to(device)
 
 criterion = AtmosLoss()
@@ -248,3 +275,24 @@ for ep in range(EPOCHS):
             f"Best val = {early_stopping.best_loss:.3e}"
         )
         break
+
+print("Loading best model for test evaluation")
+model.load_state_dict(torch.load(CHECKPOINT_PATH, map_location=device))
+model.eval()
+
+test_loss = 0.0
+
+with torch.no_grad():
+    for ca, si, y in tqdm(test_loader, desc="Test", leave=False):
+        ca = ca.to(device, non_blocking=True)
+        si = si.to(device, non_blocking=True)
+        y  = y.to(device, non_blocking=True)
+
+        pred = model(ca, si)
+        loss = criterion(pred, y)
+
+        test_loss += loss.item()
+
+test_loss /= len(test_loader)
+
+print(f"FINAL TEST LOSS (unbiased): {test_loss:.3e}")

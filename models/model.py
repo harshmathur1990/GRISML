@@ -105,41 +105,9 @@ class SpectralEncoder(nn.Module):
 # Full Ca + Si inversion model
 # ============================================================
 class CaSiInversionCNN(nn.Module):
-    """
-    Pixel-wise inversion CNN with:
-      - Ca II encoder
-      - Si I encoder
-      - Config-driven wavelength weighting
-    """
-
-    def __init__(self, n_stokes, ltau, latent_dim=128):
+    def __init__(self, n_stokes, ltau, ca_weight, si_weight, latent_dim=128):
         super().__init__()
 
-        # Import physics config here (NOT hardcoded)
-        from config import (
-            CA_N_WAVELENGTH, CA_CORE_RANGE,
-            SI_N_WAVELENGTH, SI_CORE_RANGE, SI_IGNORE_RANGE,
-            CORE_WEIGHT, WING_WEIGHT, IGNORE_WEIGHT,
-        )
-
-        # Build wavelength masks
-        ca_weight = build_weight_mask(
-            n_lambda=CA_N_WAVELENGTH,
-            core_range=CA_CORE_RANGE,
-            core_weight=CORE_WEIGHT,
-            wing_weight=WING_WEIGHT,
-        )
-
-        si_weight = build_weight_mask(
-            n_lambda=SI_N_WAVELENGTH,
-            core_range=SI_CORE_RANGE,
-            ignore_range=SI_IGNORE_RANGE,
-            core_weight=CORE_WEIGHT,
-            wing_weight=WING_WEIGHT,
-            ignore_weight=IGNORE_WEIGHT,
-        )
-
-        # Encoders
         self.ca_encoder = SpectralEncoder(
             n_stokes=n_stokes,
             latent_dim=latent_dim,
@@ -152,7 +120,6 @@ class CaSiInversionCNN(nn.Module):
             wavelength_weight=si_weight,
         )
 
-        # Shared trunk
         self.trunk = nn.Sequential(
             nn.Linear(2 * latent_dim, 512),
             nn.ReLU(),
@@ -160,17 +127,4 @@ class CaSiInversionCNN(nn.Module):
             nn.ReLU(),
         )
 
-        # Atmosphere head
         self.head = nn.Linear(512, 4 * ltau)
-
-    def forward(self, ca, si):
-        """
-        ca, si: (B, stokes, lambda)
-        """
-        z_ca = self.ca_encoder(ca)
-        z_si = self.si_encoder(si)
-
-        z = torch.cat([z_ca, z_si], dim=1)
-        z = self.trunk(z)
-
-        return self.head(z)
