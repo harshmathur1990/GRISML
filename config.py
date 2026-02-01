@@ -8,7 +8,7 @@ CA_FITS  = base_path / 'spectralveil_corrected_25Apr25ARM2-003.fits_squarred_pix
 SI_FITS  = base_path / 'spectralveil_corrected_25Apr25ARM1-003.fits_squarred_pixels.fits_aligned_downsampled_streamed.fits'
 ATM_H5   = data_path / 'combined_output_atmos_cycle_B_3.nc'
 
-BATCH_SIZE = 32
+BATCH_SIZE = 1024
 EPOCHS = 50
 LR = 1e-3
 DEVICE = "cuda"
@@ -33,3 +33,16 @@ MIN_DELTA = 0.0   # minimum improvement to count
 # Stokes indices:
 # 0 = I, 1 = Q, 2 = U, 3 = V
 STOKES_IDX = [0, 3]
+
+CA_N_WAVELENGTH = 1000
+CA_CORE_RANGE = (0, 226)
+
+# Si I
+SI_N_WAVELENGTH = 872
+SI_CORE_RANGE = (400, 656)
+SI_IGNORE_RANGE = (656, 872)
+
+# Importance weights
+CORE_WEIGHT = 3.0      # boost core
+WING_WEIGHT = 1.0      # normal
+IGNORE_WEIGHT = 0.0    # hard ignore
