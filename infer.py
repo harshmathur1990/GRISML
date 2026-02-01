@@ -7,6 +7,7 @@ from tqdm import tqdm
 from config import *
 from models.model import CaSiInversionCNN
 from utils.denormalise import denormalise_output
+from utils.spectral_weights import build_weight_mask
 
 
 
@@ -46,15 +47,43 @@ def run_inference(ca_fits, si_fits, atm_out_h5, batch_size=1024):
     with h5py.File(ATM_H5, "r") as f:
         ltau = f["temp"].shape[-1]
 
+    # ---- build wavelength masks (SAME AS TRAINING) ----
+    ca_weight = build_weight_mask(
+        n_lambda=CA_N_WAVELENGTH,
+        core_range=CA_CORE_RANGE,
+        core_weight=CORE_WEIGHT,
+        wing_weight=WING_WEIGHT,
+    )
+
+    si_weight = build_weight_mask(
+        n_lambda=SI_N_WAVELENGTH,
+        core_range=SI_CORE_RANGE,
+        ignore_range=SI_IGNORE_RANGE,
+        core_weight=CORE_WEIGHT,
+        wing_weight=WING_WEIGHT,
+        ignore_weight=IGNORE_WEIGHT,
+    )
+
     # ---- model ----
     device = torch.device(DEVICE)
+
     model = CaSiInversionCNN(
         n_stokes=n_stokes,
         ltau=ltau,
+        ca_weight=ca_weight,
+        si_weight=si_weight,
+        stokes_scale=stokes_scale,
     ).to(device)
 
     model.load_state_dict(torch.load(CHECKPOINT_PATH, map_location=device))
     model.eval()
+
+    # =========================
+    #   MODEL SANITY CHECK
+    # =========================
+    print("Model loaded successfully")
+    print("Ca λ mask shape:", model.ca_encoder.w_lambda.shape)
+    print("Si λ mask shape:", model.si_encoder.w_lambda.shape)
 
     # ---- output arrays (NORMALISED) ----
     out = np.zeros((t, y, x, 4 * ltau), dtype=np.float32)
