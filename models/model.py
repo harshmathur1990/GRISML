@@ -3,33 +3,6 @@ import torch.nn as nn
 
 
 # ============================================================
-# Helper: build wavelength weight mask
-# ============================================================
-def build_weight_mask(
-    n_lambda: int,
-    core_range=None,        # tuple (start, end)
-    ignore_range=None,      # tuple (start, end)
-    core_weight: float = 3.0,
-    wing_weight: float = 1.0,
-    ignore_weight: float = 0.0,
-) -> torch.Tensor:
-    """
-    Returns a tensor of shape (n_lambda,) containing wavelength weights.
-    """
-    w = torch.full((n_lambda,), wing_weight, dtype=torch.float32)
-
-    if core_range is not None:
-        a, b = core_range
-        w[a:b] = core_weight
-
-    if ignore_range is not None:
-        a, b = ignore_range
-        w[a:b] = ignore_weight
-
-    return w
-
-
-# ============================================================
 # Basic 1D convolution block
 # ============================================================
 class ConvBlock1D(nn.Module):
@@ -128,3 +101,15 @@ class CaSiInversionCNN(nn.Module):
         )
 
         self.head = nn.Linear(512, 4 * ltau)
+
+    def forward(self, ca, si):
+        """
+        ca, si: (B, stokes, lambda)
+        """
+        z_ca = self.ca_encoder(ca)
+        z_si = self.si_encoder(si)
+
+        z = torch.cat([z_ca, z_si], dim=1)
+        z = self.trunk(z)
+
+        return self.head(z)
