@@ -87,7 +87,8 @@ def run_inference(ca_fits, si_fits, atm_out_h5, batch_size=1024):
         n_stokes=n_stokes,
         ltau=ltau,
         ca_weight=ca_weight,
-        si_weight=si_weight
+        si_weight=si_weight,
+        stokes_scale=stokes_scale
     ).to(device)
 
     model.load_state_dict(torch.load(CHECKPOINT_PATH, map_location=device))
