@@ -8,7 +8,17 @@ from config import *
 from models.model import CaSiInversionCNN
 from utils.denormalise import denormalise_output
 from utils.spectral_weights import build_weight_mask
+from utils.stokes_scaling import build_stokes_scale
 
+
+def get_ltau_scale():
+    taumin = -7.8
+    taumax= 1.0
+    dtau = 0.14
+    ntau = int((taumax-taumin)/dtau) + 1
+    ltau_scale = np.arange(ntau, dtype='float64')/(ntau-1.0) * (taumax-taumin) + taumin
+
+    return ltau_scale
 
 
 # =========================
@@ -64,6 +74,12 @@ def run_inference(ca_fits, si_fits, atm_out_h5, batch_size=1024):
         ignore_weight=IGNORE_WEIGHT,
     )
 
+    stokes_scale = build_stokes_scale(
+        n_stokes=n_stokes,
+        stokes_indices=STOKES_IDX,
+        scale_dict=STOKES_SCALE,
+    )
+
     # ---- model ----
     device = torch.device(DEVICE)
 
@@ -83,6 +99,7 @@ def run_inference(ca_fits, si_fits, atm_out_h5, batch_size=1024):
     print("Model loaded successfully")
     print("Ca λ mask shape:", model.ca_encoder.w_lambda.shape)
     print("Si λ mask shape:", model.si_encoder.w_lambda.shape)
+    print("Stokes scale:", model.ca_encoder.w_stokes.squeeze())
 
     # ---- output arrays (NORMALISED) ----
     out = np.zeros((t, y, x, 4 * ltau), dtype=np.float32)
@@ -135,12 +152,18 @@ def run_inference(ca_fits, si_fits, atm_out_h5, batch_size=1024):
     atm = denormalise_output(out.reshape(-1, 4 * ltau), ltau)
 
     with h5py.File(atm_out_h5, "w") as f:
+
+        ltau_scale = get_ltau_scale()
+
         shape = (t, y, x, ltau)
+
+        ltau500 = np.broadcast_to(ltau_scale[None, None, None, :], shape)
 
         f.create_dataset("temp",  data=atm["temp"].reshape(shape))
         f.create_dataset("vlos",  data=atm["vlos"].reshape(shape))
         f.create_dataset("vturb", data=atm["vturb"].reshape(shape))
         f.create_dataset("blong", data=atm["blong"].reshape(shape))
+        f.create_dataset("ltau500", data=ltau500)
 
     print(f"Saved output to {atm_out_h5}")
 

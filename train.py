@@ -11,6 +11,7 @@ from models.model import CaSiInversionCNN
 from losses.loss import AtmosLoss
 from utils.early_stopping import EarlyStopping
 from utils.spectral_weights import build_weight_mask
+from utils.stokes_scaling import build_stokes_scale
 
 
 
@@ -153,12 +154,24 @@ si_weight = build_weight_mask(
     ignore_weight=IGNORE_WEIGHT,
 )
 
+stokes_scale = build_stokes_scale(
+    n_stokes=n_stokes,
+    stokes_indices=STOKES_IDX,
+    scale_dict=STOKES_SCALE,
+)
+
 model = CaSiInversionCNN(
     n_stokes=n_stokes,
     ltau=ltau,
     ca_weight=ca_weight,
     si_weight=si_weight,
+    stokes_scale=stokes_scale
 ).to(device)
+
+print("Model loaded successfully")
+print("Ca λ mask shape:", model.ca_encoder.w_lambda.shape)
+print("Si λ mask shape:", model.si_encoder.w_lambda.shape)
+print("Stokes scale:", model.ca_encoder.w_stokes.squeeze())
 
 criterion = AtmosLoss()
 optim = torch.optim.Adam(model.parameters(), lr=LR)
@@ -170,7 +183,6 @@ early_stopping = EarlyStopping(
 )
 
 print_gpu_memory("after model init")
-
 
 # ============================================================
 # 8. SANITY CHECK + DEVICE CHECK  (POINT 4)

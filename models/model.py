@@ -29,7 +29,13 @@ class SpectralEncoder(nn.Module):
     Applies wavelength weighting/masking BEFORE convolution.
     """
 
-    def __init__(self, n_stokes, latent_dim, wavelength_weight: torch.Tensor):
+    def __init__(
+        self,
+        n_stokes,
+        latent_dim,
+        wavelength_weight: torch.Tensor,
+        stokes_scale: torch.Tensor
+    ):
         super().__init__()
 
         if wavelength_weight.ndim != 1:
@@ -42,6 +48,11 @@ class SpectralEncoder(nn.Module):
         self.register_buffer(
             "w_lambda",
             wavelength_weight[None, None, :],   # (1, 1, lambda)
+        )
+
+        self.register_buffer(
+            "w_stokes",
+            stokes_scale[None, :, :],           # (1, stokes, 1)
         )
 
         self.conv = nn.Sequential(
@@ -66,6 +77,9 @@ class SpectralEncoder(nn.Module):
                 f"Lambda mismatch: input {x.shape[-1]} vs mask {self.w_lambda.shape[-1]}"
             )
 
+        # balance I vs V
+        x = x * self.w_stokes
+
         # Apply wavelength weighting
         x = x * self.w_lambda
 
@@ -78,19 +92,29 @@ class SpectralEncoder(nn.Module):
 # Full Ca + Si inversion model
 # ============================================================
 class CaSiInversionCNN(nn.Module):
-    def __init__(self, n_stokes, ltau, ca_weight, si_weight, latent_dim=128):
+    def __init__(
+        self,
+        n_stokes,
+        ltau,
+        ca_weight,
+        si_weight,
+        stokes_scale,
+        latent_dim=128
+    ):
         super().__init__()
 
         self.ca_encoder = SpectralEncoder(
             n_stokes=n_stokes,
             latent_dim=latent_dim,
             wavelength_weight=ca_weight,
+            stokes_scale=stokes_scale
         )
 
         self.si_encoder = SpectralEncoder(
             n_stokes=n_stokes,
             latent_dim=latent_dim,
             wavelength_weight=si_weight,
+            stokes_scale=stokes_scale
         )
 
         self.trunk = nn.Sequential(

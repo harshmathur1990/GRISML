@@ -46,3 +46,10 @@ SI_IGNORE_RANGE = (656, 872)
 CORE_WEIGHT = 3.0      # boost core
 WING_WEIGHT = 1.0      # normal
 IGNORE_WEIGHT = 0.0    # hard ignore
+
+STOKES_SCALE = {
+    0: 1.0,
+    1: 100.0,
+    2: 100.0,
+    3: 100.0,
+}
