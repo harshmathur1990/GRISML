@@ -4,9 +4,9 @@ from pathlib import Path
 base_path = Path('/mn/stornext/u3/harshm/Documents/Data/GRIS')
 data_path = base_path / 'KMeans-Inversions' / 'fulldata_inversions'
 
-CA_FITS  = base_path / 'spectralveil_corrected_25Apr25ARM2-003.fits_squarred_pixels.fits_aligned_downsampled_streamed.fits'
-SI_FITS  = base_path / 'spectralveil_corrected_25Apr25ARM1-003.fits_squarred_pixels.fits_aligned_downsampled_streamed.fits'
-ATM_H5   = data_path / 'combined_output_atmos_cycle_B_3.nc'
+CA_FITS  = base_path / 'spectralveil_corrected_25Apr25ARM2-004.fits_squarred_pixels.fits_aligned_downsampled_streamed.fits'
+SI_FITS  = base_path / 'spectralveil_corrected_25Apr25ARM1-004.fits_squarred_pixels.fits_aligned_downsampled_streamed.fits'
+ATM_H5   = data_path / 'combined_output_004_atmos_B_cycle_1.nc'
 
 BATCH_SIZE = 1024
 EPOCHS = 50
