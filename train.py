@@ -51,18 +51,41 @@ def print_gpu_memory(tag=""):
 
 
 # ============================================================
-# 3. INSPECT DATA SHAPES
+# 3. INSPECT DATA SHAPES (TIME-SAFE)
 # ============================================================
-with fits.open(CA_FITS, memmap=True) as f:
-    t, _, y, x, lca = f[0].data.shape
 
-with fits.open(SI_FITS, memmap=True) as f:
-    _, _, _, _, lsi = f[0].data.shape
-
+# ---- atmosphere defines (t, y, x) ----
 with h5py.File(ATM_H5, "r") as f:
-    ltau = f["temp"].shape[-1]
+    t, y, x, ltau = f["temp"].shape
+
+# ---- Ca FITS ----
+with fits.open(CA_FITS, memmap=True) as f:
+    ca_shape = f[0].data.shape
+
+if len(ca_shape) == 5:
+    _, _, _, _, lca = ca_shape
+elif len(ca_shape) == 4:
+    _, _, _, lca = ca_shape
+else:
+    raise ValueError(f"Unexpected Ca FITS shape: {ca_shape}")
+
+# ---- Si FITS ----
+with fits.open(SI_FITS, memmap=True) as f:
+    si_shape = f[0].data.shape
+
+if len(si_shape) == 5:
+    _, _, _, _, lsi = si_shape
+elif len(si_shape) == 4:
+    _, _, _, lsi = si_shape
+else:
+    raise ValueError(f"Unexpected Si FITS shape: {si_shape}")
 
 n_stokes = len(STOKES_IDX)
+
+print(f"Atmosphere shape: t={t}, y={y}, x={x}, ltau={ltau}")
+print(f"Ca λ points: {lca}")
+print(f"Si λ points: {lsi}")
+
 
 
 # ============================================================
