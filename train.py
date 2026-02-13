@@ -5,7 +5,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from config import *
-from data.datasets import CaSiAtmosDataset
+# from data.datasets import CaSiAtmosDataset
+from data.bifrostdataset import CaSiAtmosDataset
 from utils.split import make_splits
 from models.model import CaSiInversionCNN
 from losses.loss import AtmosLoss
@@ -54,31 +55,31 @@ def print_gpu_memory(tag=""):
 # 3. INSPECT DATA SHAPES (TIME-SAFE)
 # ============================================================
 
-# ---- atmosphere defines (t, y, x) ----
-with h5py.File(ATM_H5, "r") as f:
-    t, y, x, ltau = f["temp"].shape
+# # ---- atmosphere defines (t, y, x) ----
+# with h5py.File(ATM_H5, "r") as f:
+#     t, y, x, ltau = f["temp"].shape
 
-# ---- Ca FITS ----
-with fits.open(CA_FITS, memmap=True) as f:
-    ca_shape = f[0].data.shape
+# # ---- Ca FITS ----
+# with fits.open(CA_FITS, memmap=True) as f:
+#     ca_shape = f[0].data.shape
 
-if len(ca_shape) == 5:
-    _, _, _, _, lca = ca_shape
-elif len(ca_shape) == 4:
-    _, _, _, lca = ca_shape
-else:
-    raise ValueError(f"Unexpected Ca FITS shape: {ca_shape}")
+# if len(ca_shape) == 5:
+#     _, _, _, _, lca = ca_shape
+# elif len(ca_shape) == 4:
+#     _, _, _, lca = ca_shape
+# else:
+#     raise ValueError(f"Unexpected Ca FITS shape: {ca_shape}")
 
-# ---- Si FITS ----
-with fits.open(SI_FITS, memmap=True) as f:
-    si_shape = f[0].data.shape
+# # ---- Si FITS ----
+# with fits.open(SI_FITS, memmap=True) as f:
+#     si_shape = f[0].data.shape
 
-if len(si_shape) == 5:
-    _, _, _, _, lsi = si_shape
-elif len(si_shape) == 4:
-    _, _, _, lsi = si_shape
-else:
-    raise ValueError(f"Unexpected Si FITS shape: {si_shape}")
+# if len(si_shape) == 5:
+#     _, _, _, _, lsi = si_shape
+# elif len(si_shape) == 4:
+#     _, _, _, lsi = si_shape
+# else:
+#     raise ValueError(f"Unexpected Si FITS shape: {si_shape}")
 
 n_stokes = len(STOKES_IDX)
 
@@ -97,9 +98,13 @@ train_idx, val_idx, test_idx = make_splits(
     VAL_SPLIT
 )
 
-train_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, train_idx)
-val_ds   = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, val_idx)
-test_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, test_idx)
+# train_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, train_idx)
+# val_ds   = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, val_idx)
+# test_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, test_idx)
+
+train_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, train_idx)
+val_ds   = CaSiAtmosDataset(STIC_h5, ATM_H5, val_idx)
+test_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, test_idx)
 
 # ============================================================
 # 5. SAFE BATCH-SIZE PROBING (OPTIONAL BUT RECOMMENDED)
