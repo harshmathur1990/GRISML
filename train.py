@@ -3,7 +3,7 @@ from astropy.io import fits
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-
+import numpy as np
 from config import *
 # from data.datasets import CaSiAtmosDataset
 from data.bifrostdataset import CaSiAtmosDataset
