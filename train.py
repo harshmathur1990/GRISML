@@ -55,9 +55,9 @@ def print_gpu_memory(tag=""):
 # 3. INSPECT DATA SHAPES (TIME-SAFE)
 # ============================================================
 
-# # ---- atmosphere defines (t, y, x) ----
-# with h5py.File(ATM_H5, "r") as f:
-#     t, y, x, ltau = f["temp"].shape
+# ---- atmosphere defines (t, y, x) ----
+with h5py.File(ATM_H5, "r") as f:
+    _, _, _, ltau = f["temp"].shape
 
 # # ---- Ca FITS ----
 # with fits.open(CA_FITS, memmap=True) as f:
