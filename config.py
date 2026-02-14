@@ -9,8 +9,8 @@ data_path = base_path / 'KMeans-Inversions' / 'fulldata_inversions'
 # ATM_H5   = data_path / 'combined_output_004_atmos_B_cycle_1.nc'
 
 
-STIC_h5 = base_path / 'bifrost_output.nc'
-ATM_H5 = base_path / 'bifrost.nc'
+STIC_h5 = data_path / 'bifrost_output.nc'
+ATM_H5 = data_path / 'bifrost.nc'
 
 BATCH_SIZE = 1024
 EPOCHS = 50
