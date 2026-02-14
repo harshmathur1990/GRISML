@@ -51,8 +51,8 @@ class CaSiAtmosDataset(Dataset):
         # profiles shape: (t, ny, nx, wav, stokes)
         prof = self.profiles[t, y, x]   # (wav, stokes)
 
-        ca = prof[self.ca_idx, STOKES_IDX]
-        si = prof[self.si_idx, STOKES_IDX]
+        ca = prof[self.ca_idx][:, STOKES_IDX]
+        si = prof[self.si_idx][:, STOKES_IDX]
 
         # ---- output (normalised atmosphere) ----
         Y = np.concatenate([
