@@ -83,17 +83,31 @@ def print_gpu_memory(tag=""):
 
 n_stokes = len(STOKES_IDX)
 
-print(f"Atmosphere shape: t={t}, y={y}, x={x}, ltau={ltau}")
-print(f"Ca λ points: {lca}")
-print(f"Si λ points: {lsi}")
+# print(f"Atmosphere shape: t={t}, y={y}, x={x}, ltau={ltau}")
+# print(f"Ca λ points: {lca}")
+# print(f"Si λ points: {lsi}")
 
 
+def get_valid_indices(stic_h5, wav_index=520, stokes_index=0, thr=3):
+    with h5py.File(stic_h5, "r") as f:
+        # read only one slice → cheap
+        intensity = f["profiles"][0, :, :, wav_index, stokes_index]
+
+    # find valid pixels
+    y, x = np.where(intensity < thr)
+
+    # build list of tuples
+    idx = [(0, int(yy), int(xx)) for yy, xx in zip(y, x)]
+    return idx
+
+
+valid_idx = get_valid_indices(STIC_h5)
 
 # ============================================================
 # 4. SPLITS
 # ============================================================
 train_idx, val_idx, test_idx = make_splits(
-    (t, y, x),
+    valid_idx,
     TRAIN_SPLIT,
     VAL_SPLIT
 )
