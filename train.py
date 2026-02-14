@@ -109,7 +109,9 @@ valid_idx = get_valid_indices(STIC_h5)
 train_idx, val_idx, test_idx = make_splits(
     valid_idx,
     TRAIN_SPLIT,
-    VAL_SPLIT
+    VAL_SPLIT,
+    seed=42,
+    spatial_block=32   # optional but recommended
 )
 
 # train_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, train_idx)
