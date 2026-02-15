@@ -102,22 +102,23 @@ def get_valid_indices(stic_h5, wav_index=520, stokes_index=0, thr=3):
 
 
 valid_idx = get_valid_indices(STIC_h5)
-
-valid_idx = sorted(valid_idx, key=lambda p: (p[0], p[1], p[2]))
+valid_idx.sort(key=lambda p: (p[0], p[1], p[2]))
 
 full_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, valid_idx)
 
 N = len(full_ds)
-
 all_idx = np.arange(N)
 
 train_idx, val_idx, test_idx = make_splits(
     all_idx,
     TRAIN_SPLIT,
     VAL_SPLIT,
-    seed=42,
-    spatial_block=None   # spatial split already preserved by extraction order
+    seed=42
 )
+
+train_ds = Subset(full_ds, train_idx)
+val_ds   = Subset(full_ds, val_idx)
+test_ds  = Subset(full_ds, test_idx)
 
 # # ============================================================
 # # 4. SPLITS
@@ -138,9 +139,6 @@ train_idx, val_idx, test_idx = make_splits(
 # val_ds   = CaSiAtmosDataset(STIC_h5, ATM_H5, val_idx)
 # test_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, test_idx)
 
-train_ds = Subset(full_ds, train_idx)
-val_ds   = Subset(full_ds, val_idx)
-test_ds  = Subset(full_ds, test_idx)
 
 # ============================================================
 # 5. SAFE BATCH-SIZE PROBING (OPTIONAL BUT RECOMMENDED)

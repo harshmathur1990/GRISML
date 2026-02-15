@@ -12,6 +12,12 @@ data_path = base_path / 'KMeans-Inversions' / 'fulldata_inversions'
 STIC_h5 = data_path / 'bifrost_output.nc'
 ATM_H5 = data_path / 'bifrost.nc'
 
+
+# options:
+#   "stream"  → read pixels from HDF5 (best for cvfs)
+#   "full"    → load cubes fully to RAM first (best if on /dev/shm)
+DATA_LOADING_MODE = "full"
+
 BATCH_SIZE = 1024
 EPOCHS = 50
 LR = 1e-3
