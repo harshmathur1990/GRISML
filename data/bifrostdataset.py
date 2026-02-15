@@ -1,88 +1,70 @@
-import torch
-from torch.utils.data import Dataset
-import numpy as np
-import h5py
-from config import OUTPUT_SCALES, STOKES_IDX
-
-
 class CaSiAtmosDataset(Dataset):
-    """
-    RAM-cached dataset.
-
-    Loads entire HDF5 cubes into memory once,
-    extracts only requested pixels,
-    then serves pure NumPy slices (very fast).
-    """
 
     def __init__(self, stic_h5, atm_h5, indices):
 
-        print("Loading HDF5 cubes into RAM...")
+        print("Opening HDF5 files (stream mode)...")
 
-        # ---- load STiC cube fully ----
-        with h5py.File(stic_h5, "r") as f:
-            self.wav = f["wav"][:]
-            self.profiles = f["profiles"][:]   # FULL LOAD
+        fs = h5py.File(stic_h5, "r")
+        fa = h5py.File(atm_h5, "r")
 
-        # ---- load atmosphere cube fully ----
-        with h5py.File(atm_h5, "r") as f:
-            self.temp  = f["temp"][:]
-            self.vlos  = f["vlos"][:]
-            self.vturb = f["vturb"][:]
-            self.blong = f["blong"][:]
+        wav = fs["wav"][:]
+        profiles = fs["profiles"]
 
-        print("Cubes loaded into RAM")
+        temp  = fa["temp"]
+        vlos  = fa["vlos"]
+        vturb = fa["vturb"]
+        blong = fa["blong"]
 
         self.indices = indices
-        self.sc = OUTPUT_SCALES
-
-        # ---- observed wavelength grids ----
-        ca_obs = np.arange(1000, dtype=float) * 0.0109907 + 8540.67304823
-        si_obs = np.arange(872,  dtype=float) * 0.0144423 + 10818.6544101
+        sc = OUTPUT_SCALES
 
         # ---- wavelength matching ----
-        print("Matching wavelengths...")
-        self.ca_idx = np.abs(self.wav[:, None] - ca_obs[None, :]).argmin(axis=0)
-        self.si_idx = np.abs(self.wav[:, None] - si_obs[None, :]).argmin(axis=0)
+        ca_obs = np.arange(1000)*0.0109907 + 8540.67304823
+        si_obs = np.arange(872)*0.0144423 + 10818.6544101
 
-        # ---- determine output size ----
-        ltau = self.temp.shape[-1]
-        n_out = ltau * 4
+        ca_idx = np.abs(wav[:,None] - ca_obs[None,:]).argmin(axis=0)
+        si_idx = np.abs(wav[:,None] - si_obs[None,:]).argmin(axis=0)
+
+        ltau = temp.shape[-1]
+        n_out = ltau*4
         N = len(indices)
 
-        print("Pre-extracting tensors into RAM...")
+        print("Building RAM dataset from streamed reads...")
         print("Samples:", N)
 
-        # ---- allocate arrays ----
-        self.Ca = np.empty((N, len(self.ca_idx), len(STOKES_IDX)), dtype=np.float32)
-        self.Si = np.empty((N, len(self.si_idx), len(STOKES_IDX)), dtype=np.float32)
+        self.Ca = np.empty((N, len(ca_idx), len(STOKES_IDX)), dtype=np.float32)
+        self.Si = np.empty((N, len(si_idx), len(STOKES_IDX)), dtype=np.float32)
         self.Y  = np.empty((N, n_out), dtype=np.float32)
 
-        # ---- extract once ----
-        for i, (t, y, x) in enumerate(indices):
+        # ---- stream pixel-by-pixel ----
+        for i,(t,y,x) in enumerate(indices):
 
-            prof = self.profiles[t, y, x]
+            prof = profiles[t,y,x]
 
-            self.Ca[i] = prof[self.ca_idx][:, STOKES_IDX]
-            self.Si[i] = prof[self.si_idx][:, STOKES_IDX]
+            self.Ca[i] = prof[ca_idx][:,STOKES_IDX]
+            self.Si[i] = prof[si_idx][:,STOKES_IDX]
 
             self.Y[i] = np.concatenate([
-                self.temp[t, y, x]  * self.sc["temp"],
-                self.vlos[t, y, x]  * self.sc["vlos"],
-                self.vturb[t, y, x] * self.sc["vturb"],
-                self.blong[t, y, x] * self.sc["blong"],
+                temp[t,y,x]*sc["temp"],
+                vlos[t,y,x]*sc["vlos"],
+                vturb[t,y,x]*sc["vturb"],
+                blong[t,y,x]*sc["blong"],
             ])
 
-            if i % 20000 == 0 and i > 0:
+            if i % 10000 == 0 and i>0:
                 print(f"{i}/{N}")
+
+        fs.close()
+        fa.close()
 
         print("Dataset ready in RAM.")
 
     def __len__(self):
-        return len(self.indices)
+        return len(self.Ca)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, i):
         return (
-            torch.from_numpy(self.Ca[idx]),
-            torch.from_numpy(self.Si[idx]),
-            torch.from_numpy(self.Y[idx]),
+            torch.from_numpy(self.Ca[i]),
+            torch.from_numpy(self.Si[i]),
+            torch.from_numpy(self.Y[i]),
         )

@@ -13,7 +13,7 @@ from losses.loss import AtmosLoss
 from utils.early_stopping import EarlyStopping
 from utils.spectral_weights import build_weight_mask
 from utils.stokes_scaling import build_stokes_scale
-
+from torch.utils.data import Subset
 
 
 # ============================================================
@@ -103,24 +103,44 @@ def get_valid_indices(stic_h5, wav_index=520, stokes_index=0, thr=3):
 
 valid_idx = get_valid_indices(STIC_h5)
 
-# ============================================================
-# 4. SPLITS
-# ============================================================
+valid_idx = sorted(valid_idx, key=lambda p: (p[0], p[1], p[2]))
+
+full_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, valid_idx)
+
+N = len(full_ds)
+
+all_idx = np.arange(N)
+
 train_idx, val_idx, test_idx = make_splits(
-    valid_idx,
+    all_idx,
     TRAIN_SPLIT,
     VAL_SPLIT,
     seed=42,
-    spatial_block=32   # optional but recommended
+    spatial_block=None   # spatial split already preserved by extraction order
 )
+
+# # ============================================================
+# # 4. SPLITS
+# # ============================================================
+# train_idx, val_idx, test_idx = make_splits(
+#     valid_idx,
+#     TRAIN_SPLIT,
+#     VAL_SPLIT,
+#     seed=42,
+#     spatial_block=32   # optional but recommended
+# )
 
 # train_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, train_idx)
 # val_ds   = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, val_idx)
 # test_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, test_idx)
 
-train_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, train_idx)
-val_ds   = CaSiAtmosDataset(STIC_h5, ATM_H5, val_idx)
-test_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, test_idx)
+# train_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, train_idx)
+# val_ds   = CaSiAtmosDataset(STIC_h5, ATM_H5, val_idx)
+# test_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, test_idx)
+
+train_ds = Subset(full_ds, train_idx)
+val_ds   = Subset(full_ds, val_idx)
+test_ds  = Subset(full_ds, test_idx)
 
 # ============================================================
 # 5. SAFE BATCH-SIZE PROBING (OPTIONAL BUT RECOMMENDED)
