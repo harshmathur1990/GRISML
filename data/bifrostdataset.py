@@ -10,7 +10,7 @@ class CaSiAtmosDataset(Dataset):
     def __init__(self, stic_h5, atm_h5, indices):
 
         self.indices = indices
-        sc = OUTPUT_SCALES
+        self.sc = OUTPUT_SCALES
 
         print(f"Dataset mode: {DATA_LOADING_MODE}")
 
@@ -93,10 +93,10 @@ class CaSiAtmosDataset(Dataset):
                 self.Si[i] = prof[si_idx][:,STOKES_IDX]
 
                 self.Y[i] = np.concatenate([
-                    temp[t,y,x]*sc["temp"],
-                    vlos[t,y,x]*sc["vlos"],
-                    vturb[t,y,x]*sc["vturb"],
-                    blong[t,y,x]*sc["blong"],
+                    temp[t,y,x] * self.sc["temp"],
+                    vlos[t,y,x] * self.sc["vlos"],
+                    vturb[t,y,x] * self.sc["vturb"],
+                    blong[t,y,x] * self.sc["blong"],
                 ])
 
                 if i % 20000 == 0 and i>0:
