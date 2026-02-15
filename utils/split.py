@@ -9,24 +9,10 @@ def make_splits(
     spatial_block=None,
 ):
     """
-    Flexible dataset splitter.
-
-    Parameters
-    ----------
-    data : tuple OR list
-        - (t,y,x) → build full grid indices
-        - list[(t,y,x)] → split existing indices
-
-    train_frac : float
-    val_frac   : float
-    seed       : int, reproducibility
-    spatial_block : int or None
-        If given, performs block-based split to avoid spatial leakage.
-        Example: spatial_block=32 → splits by 32×32 tiles.
-
-    Returns
-    -------
-    train_idx, val_idx, test_idx : list[(t,y,x)]
+    data can be:
+        - tuple (t,y,x) shape
+        - list[(t,y,x)]
+        - array/list of integers
     """
 
     rng = np.random.default_rng(seed)
@@ -36,25 +22,22 @@ def make_splits(
     # ----------------------------------------------------
     if isinstance(data, tuple):
         t, y, x = data
-        idx = np.array(
-            [(i, j, k) for i in range(t)
-                        for j in range(y)
-                        for k in range(x)],
-            dtype=np.int32
-        )
+        idx = [(i, j, k) for i in range(t)
+                           for j in range(y)
+                           for k in range(x)]
+        idx = np.array(idx, dtype=np.int32)
 
     # ----------------------------------------------------
-    # CASE 2: already index list → convert to array
+    # CASE 2: already index list or array
     # ----------------------------------------------------
     else:
-        idx = np.array(data, dtype=np.int32)
+        idx = np.array(data)
 
     # ----------------------------------------------------
-    # OPTIONAL: spatial block split (recommended for CNNs)
+    # OPTIONAL spatial split (only meaningful for tuples)
     # ----------------------------------------------------
-    if spatial_block is not None:
+    if spatial_block is not None and idx.ndim == 2 and idx.shape[1] == 3:
 
-        # group pixels into spatial tiles
         tiles = {}
 
         for t_, y_, x_ in idx:
@@ -79,11 +62,7 @@ def make_splits(
         def collect(keys):
             return [pix for k in keys for pix in tiles[k]]
 
-        train_idx = collect(train_tiles)
-        val_idx   = collect(val_tiles)
-        test_idx  = collect(test_tiles)
-
-        return train_idx, val_idx, test_idx
+        return collect(train_tiles), collect(val_tiles), collect(test_tiles)
 
     # ----------------------------------------------------
     # STANDARD RANDOM SPLIT
@@ -98,9 +77,18 @@ def make_splits(
     val_idx   = idx[n_tr:n_tr+n_val]
     test_idx  = idx[n_tr+n_val:]
 
-    # convert back to Python tuples (Dataset-friendly)
-    train_idx = [tuple(p) for p in train_idx]
-    val_idx   = [tuple(p) for p in val_idx]
-    test_idx  = [tuple(p) for p in test_idx]
+    # ----------------------------------------------------
+    # RETURN TYPE FIX
+    # ----------------------------------------------------
+    # if idx is tuples → return tuples
+    # if idx is integers → return integers
+    if idx.ndim == 2:
+        train_idx = [tuple(p) for p in train_idx]
+        val_idx   = [tuple(p) for p in val_idx]
+        test_idx  = [tuple(p) for p in test_idx]
+    else:
+        train_idx = train_idx.tolist()
+        val_idx   = val_idx.tolist()
+        test_idx  = test_idx.tolist()
 
     return train_idx, val_idx, test_idx
