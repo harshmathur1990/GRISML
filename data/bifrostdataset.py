@@ -1,3 +1,11 @@
+import torch
+from torch.utils.data import Dataset
+import numpy as np
+import h5py
+from astropy.io import fits
+from config import OUTPUT_SCALES, STOKES_IDX
+
+
 class CaSiAtmosDataset(Dataset):
 
     def __init__(self, stic_h5, atm_h5, indices):
