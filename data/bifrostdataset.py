@@ -118,7 +118,7 @@ class CaSiAtmosDataset(Dataset):
                 # update every 20000
                 if counter == 20000:
                     pbar.update(counter)
-                    counter = 
+                    counter = 0
 
             # update remaining items
             if counter > 0:
