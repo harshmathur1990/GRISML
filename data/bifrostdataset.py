@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 import numpy as np
 import h5py
 from config import OUTPUT_SCALES, STOKES_IDX, DATA_LOADING_MODE
+from tqdm import tqdm
 
 
 class CaSiAtmosDataset(Dataset):
@@ -55,6 +56,8 @@ class CaSiAtmosDataset(Dataset):
 
             print("Extracting tensors from RAM cubes...")
 
+            pbar = tqdm(total=N, desc="Extracting", unit="pix")
+
             for i,(t,y,x) in enumerate(indices):
 
                 prof = profiles[t,y,x]
@@ -69,8 +72,17 @@ class CaSiAtmosDataset(Dataset):
                     blong[t,y,x]*sc["blong"],
                 ])
 
-                if i % 20000 == 0 and i>0:
-                    print(f"{i}/{N}")
+                counter += 1
+
+                # update every 20000
+                if counter == 20000:
+                    pbar.update(counter)
+                    counter = 0
+
+            if counter > 0:
+                pbar.update(counter)
+
+            pbar.close()
 
         # ====================================================
         # MODE 2 — STREAM FROM HDF5
@@ -84,6 +96,8 @@ class CaSiAtmosDataset(Dataset):
             vlos  = fa["vlos"]
             vturb = fa["vturb"]
             blong = fa["blong"]
+
+            pbar = tqdm(total=N, desc="Extracting", unit="pix")
 
             for i,(t,y,x) in enumerate(indices):
 
@@ -99,8 +113,18 @@ class CaSiAtmosDataset(Dataset):
                     blong[t,y,x] * self.sc["blong"],
                 ])
 
-                if i % 20000 == 0 and i>0:
-                    print(f"{i}/{N}")
+                counter += 1
+
+                # update every 20000
+                if counter == 20000:
+                    pbar.update(counter)
+                    counter = 
+
+            # update remaining items
+            if counter > 0:
+                pbar.update(counter)
+
+            pbar.close()
 
         fs.close()
         fa.close()
