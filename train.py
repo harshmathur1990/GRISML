@@ -1,3 +1,4 @@
+import os
 import h5py
 from astropy.io import fits
 import torch
@@ -7,6 +8,7 @@ import numpy as np
 from config import *
 # from data.datasets import CaSiAtmosDataset
 from data.bifrostdataset import CaSiAtmosDataset
+from data.cacheddataset import CachedDataset
 from utils.split import make_splits
 from models.model import CaSiInversionCNN
 from losses.loss import AtmosLoss
@@ -14,6 +16,7 @@ from utils.early_stopping import EarlyStopping
 from utils.spectral_weights import build_weight_mask
 from utils.stokes_scaling import build_stokes_scale
 from torch.utils.data import Subset
+from utils.cache import save_dataset_cache, load_dataset_cache
 
 
 # ============================================================
@@ -101,24 +104,53 @@ def get_valid_indices(stic_h5, wav_index=520, stokes_index=0, thr=3):
     return idx
 
 
-valid_idx = get_valid_indices(STIC_h5)
-valid_idx.sort(key=lambda p: (p[0], p[1], p[2]))
+# ============================================================
+# CACHE CHECK
+# ============================================================
+if os.path.exists(DATA_CACHE):
 
-full_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, valid_idx)
+    Ca, Si, Y, train_idx, val_idx, test_idx = load_dataset_cache(DATA_CACHE)
 
-N = len(full_ds)
-all_idx = np.arange(N)
+    full_ds = CachedDataset(Ca, Si, Y)
 
-train_idx, val_idx, test_idx = make_splits(
-    all_idx,
-    TRAIN_SPLIT,
-    VAL_SPLIT,
-    seed=42
-)
+else:
 
+    print("No dataset cache found — building dataset...")
+
+    valid_idx = get_valid_indices(STIC_h5)
+    valid_idx.sort(key=lambda p: (p[0], p[1], p[2]))
+
+    full_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, valid_idx)
+
+    N = len(full_ds)
+    all_idx = np.arange(N)
+
+    train_idx, val_idx, test_idx = make_splits(
+        all_idx,
+        TRAIN_SPLIT,
+        VAL_SPLIT,
+        seed=42
+    )
+
+    # --- save cache ---
+    save_dataset_cache(
+        DATA_CACHE,
+        full_ds.Ca,
+        full_ds.Si,
+        full_ds.Y,
+        train_idx,
+        val_idx,
+        test_idx
+    )
+
+
+# ============================================================
+# FINAL DATASETS
+# ============================================================
 train_ds = Subset(full_ds, train_idx)
 val_ds   = Subset(full_ds, val_idx)
 test_ds  = Subset(full_ds, test_idx)
+
 
 # # ============================================================
 # # 4. SPLITS

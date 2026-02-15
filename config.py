@@ -13,6 +13,7 @@ dev_shm = Path("/dev/shm")
 STIC_h5 = dev_shm / 'bifrost_output.nc'
 ATM_H5 = dev_shm / 'bifrost.nc'
 
+DATA_CACHE = data_path / "dataset_cache.npz"
 
 # options:
 #   "stream"  → read pixels from HDF5 (best for cvfs)
