@@ -58,6 +58,8 @@ class CaSiAtmosDataset(Dataset):
 
             pbar = tqdm(total=N, desc="Extracting", unit="pix")
 
+            counter = 0
+
             for i,(t,y,x) in enumerate(indices):
 
                 prof = profiles[t,y,x]
@@ -98,6 +100,8 @@ class CaSiAtmosDataset(Dataset):
             blong = fa["blong"]
 
             pbar = tqdm(total=N, desc="Extracting", unit="pix")
+
+            counter = 0
 
             for i,(t,y,x) in enumerate(indices):
 
