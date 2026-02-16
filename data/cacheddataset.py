@@ -1,6 +1,8 @@
 from torch.utils.data import Dataset
 import torch
 from config import *
+import numpy as np
+
 
 class CachedDataset(Dataset):
     def __init__(self, Ca, Si, Y, logtemp=False):
