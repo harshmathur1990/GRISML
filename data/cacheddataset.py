@@ -25,7 +25,7 @@ class CachedDataset(Dataset):
         if self.logtemp:
             ltau = y.shape[0] // 4  # number of depth points per variable
 
-            temp = y[:ltau] / sc["temp"]   # undo scaling
+            temp = y[:ltau] / OUTPUT_SCALES["temp"]   # undo scaling
             temp = np.log10(temp)
 
             y[:ltau] = temp
