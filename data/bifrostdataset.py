@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 class CaSiAtmosDataset(Dataset):
 
-    def __init__(self, stic_h5, atm_h5, indices):
+    def __init__(self, stic_h5, atm_h5, indices, logtemp=False):
 
         self.indices = indices
         self.sc = OUTPUT_SCALES
@@ -40,6 +40,8 @@ class CaSiAtmosDataset(Dataset):
         self.Ca = np.empty((N, len(ca_idx), len(STOKES_IDX)), dtype=np.float32)
         self.Si = np.empty((N, len(si_idx), len(STOKES_IDX)), dtype=np.float32)
         self.Y  = np.empty((N, n_out), dtype=np.float32)
+
+        self.logtemp = logtemp
 
         # ====================================================
         # MODE 1 — FULL LOAD INTO RAM
@@ -142,8 +144,21 @@ class CaSiAtmosDataset(Dataset):
         ca = torch.from_numpy(self.Ca[i]).permute(1,0)
         si = torch.from_numpy(self.Si[i]).permute(1,0)
 
+        y = self.Y[i].copy()
+
+        # --------------------------------------------------
+        # optional log10 temperature transform
+        # --------------------------------------------------
+        if self.logtemp:
+            ltau = y.shape[0] // 4  # number of depth points per variable
+
+            temp = y[:ltau] / self.sc["temp"]   # undo scaling
+            temp = np.log10(temp)
+
+            y[:ltau] = temp
+
         return (
             ca,
             si,
-            torch.from_numpy(self.Y[i])
+            torch.from_numpy(y)
         )

@@ -150,7 +150,7 @@ if os.path.exists(DATA_CACHE):
 
     Ca, Si, Y, train_idx, val_idx, test_idx = load_dataset_cache(DATA_CACHE)
 
-    full_ds = CachedDataset(Ca, Si, Y)
+    full_ds = CachedDataset(Ca, Si, Y, logtemp=LOGTEMP)
 
 else:
 
@@ -159,7 +159,7 @@ else:
     valid_idx = get_valid_indices(STIC_h5)
     valid_idx.sort(key=lambda p: (p[0], p[1], p[2]))
 
-    full_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, valid_idx)
+    full_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, valid_idx, logtemp=LOGTEMP)
 
     N = len(full_ds)
     all_idx = np.arange(N)
@@ -210,41 +210,8 @@ test_ds  = Subset(full_ds, test_idx)
 # val_ds   = CaSiAtmosDataset(STIC_h5, ATM_H5, val_idx)
 # test_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, test_idx)
 
-
 # ============================================================
-# 5. SAFE BATCH-SIZE PROBING (OPTIONAL BUT RECOMMENDED)
-# ============================================================
-def try_batch_size(batch_size):
-    try:
-        loader = DataLoader(
-            train_ds,
-            batch_size=batch_size,
-            shuffle=True,
-            pin_memory=True,
-        )
-        ca, si, y = next(iter(loader))
-        ca = ca.to(device)
-        si = si.to(device)
-        y  = y.to(device)
-
-        with torch.no_grad():
-            _ = model(ca, si)
-
-        print(f"Batch size {batch_size}: OK")
-        print_gpu_memory(f"batch={batch_size}")
-        return True
-
-    except RuntimeError as e:
-        if "out of memory" in str(e).lower():
-            print(f"Batch size {batch_size}: OOM")
-            torch.cuda.empty_cache()
-            return False
-        else:
-            raise e
-
-
-# ============================================================
-# 6. DATALOADERS (FINAL)
+# 5. DATALOADERS (FINAL)
 # ============================================================
 train_loader = DataLoader(
     train_ds,

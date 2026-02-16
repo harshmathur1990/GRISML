@@ -36,6 +36,8 @@ OUTPUT_SCALES = {
     "blong": 1e-4,
 }
 
+LOGTEMP = True
+
 # config.py
 
 EARLY_STOPPING_PATIENCE = 10
