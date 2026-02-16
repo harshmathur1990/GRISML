@@ -139,8 +139,11 @@ class CaSiAtmosDataset(Dataset):
         return len(self.Ca)
 
     def __getitem__(self, i):
+        ca = torch.from_numpy(self.Ca[i]).permute(1,0)
+        si = torch.from_numpy(self.Si[i]).permute(1,0)
+
         return (
-            torch.from_numpy(self.Ca[i]),
-            torch.from_numpy(self.Si[i]),
-            torch.from_numpy(self.Y[i]),
+            ca,
+            si,
+            torch.from_numpy(self.Y[i])
         )
