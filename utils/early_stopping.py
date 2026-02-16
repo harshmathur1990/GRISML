@@ -17,7 +17,11 @@ class EarlyStopping:
         if val_loss < self.best_loss - self.min_delta:
             self.best_loss = val_loss
             self.counter = 0
-            torch.save(model.state_dict(), self.path)
+
+            # --- save underlying model (handles DataParallel safely)
+            state = model.module.state_dict() if hasattr(model, "module") else model.state_dict()
+            torch.save(state, self.path)
+
             return False
         else:
             self.counter += 1

@@ -27,15 +27,45 @@ print("ROCm available :", torch.version.hip is not None)
 print("CUDA available :", torch.cuda.is_available())
 
 
-# ============================================================
-# 1. GPU SELECTION + NAME  (POINT 2)
-# ============================================================
-device = torch.device(DEVICE)
 
-if device.type == "cuda":
-    print("Using GPU:", torch.cuda.get_device_name(0))
-else:
+# ============================================================
+# GPU MODE DETECTION (single vs multi)
+# ============================================================
+def configure_gpu_mode():
+    if not torch.cuda.is_available():
+        return "cpu", 0
+
+    n_gpu = torch.cuda.device_count()
+    print(f"Detected {n_gpu} GPU(s)")
+
+    if n_gpu == 1:
+        return "single", 1
+
+    # interactive choice
+    ans = input("Use multiple GPUs? [y/N]: ").strip().lower()
+    if ans == "y":
+        return "multi", n_gpu
+    else:
+        return "single", 1
+
+
+gpu_mode, n_gpu = configure_gpu_mode()
+
+
+# ============================================================
+# DEVICE SELECTION
+# ============================================================
+if gpu_mode == "cpu":
+    device = torch.device("cpu")
     print("Using CPU")
+
+elif gpu_mode == "single":
+    device = torch.device("cuda:0")
+    print("Using GPU:", torch.cuda.get_device_name(0))
+
+else:
+    device = torch.device("cuda:0")
+    print(f"Using {n_gpu} GPUs via DataParallel")
 
 
 # ============================================================
@@ -260,7 +290,14 @@ model = CaSiInversionCNN(
     ca_weight=ca_weight,
     si_weight=si_weight,
     stokes_scale=stokes_scale
-).to(device)
+)
+
+# move to device first
+model = model.to(device)
+
+# wrap for multi-GPU if requested
+if gpu_mode == "multi":
+    model = torch.nn.DataParallel(model)
 
 print("Model loaded successfully")
 print("Ca λ mask shape:", model.ca_encoder.w_lambda.shape)
@@ -383,7 +420,13 @@ for ep in range(EPOCHS):
         break
 
 print("Loading best model for test evaluation")
-model.load_state_dict(torch.load(CHECKPOINT_PATH, map_location=device))
+state = torch.load(CHECKPOINT_PATH, map_location=device)
+
+if isinstance(model, torch.nn.DataParallel):
+    model.module.load_state_dict(state)
+else:
+    model.load_state_dict(state)
+
 model.eval()
 
 test_loss = 0.0
