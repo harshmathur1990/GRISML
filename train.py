@@ -299,10 +299,13 @@ model = model.to(device)
 if gpu_mode == "multi":
     model = torch.nn.DataParallel(model)
 
+# unwrap model if using DataParallel
+model_core = model.module if hasattr(model, "module") else model
+
 print("Model loaded successfully")
-print("Ca λ mask shape:", model.ca_encoder.w_lambda.shape)
-print("Si λ mask shape:", model.si_encoder.w_lambda.shape)
-print("Stokes scale:", model.ca_encoder.w_stokes.squeeze())
+print("Ca λ mask shape:", model_core.ca_encoder.w_lambda.shape)
+print("Si λ mask shape:", model_core.si_encoder.w_lambda.shape)
+print("Stokes scale:", model_core.ca_encoder.w_stokes.squeeze())
 
 criterion = AtmosLoss()
 optim = torch.optim.Adam(model.parameters(), lr=LR)
