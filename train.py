@@ -39,6 +39,11 @@ def configure_gpu_mode():
     if not torch.cuda.is_available():
         return "cpu", 0
 
+    for i in range(torch.cuda.device_count()):
+        print(i, torch.cuda.get_device_name(i))
+
+    print(torch.cuda.get_device_capability())
+
     n_gpu = torch.cuda.device_count()
     print(f"Detected {n_gpu} GPU(s)")
 
