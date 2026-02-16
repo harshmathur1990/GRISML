@@ -1,5 +1,6 @@
 from torch.utils.data import Dataset
 import torch
+from config import *
 
 class CachedDataset(Dataset):
     def __init__(self, Ca, Si, Y, logtemp=False):
@@ -24,7 +25,7 @@ class CachedDataset(Dataset):
         if self.logtemp:
             ltau = y.shape[0] // 4  # number of depth points per variable
 
-            temp = y[:ltau] / self.sc["temp"]   # undo scaling
+            temp = y[:ltau] / sc["temp"]   # undo scaling
             temp = np.log10(temp)
 
             y[:ltau] = temp
