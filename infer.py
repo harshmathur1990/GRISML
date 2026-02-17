@@ -41,6 +41,49 @@ def load_fits_data(fname):
         raise ValueError(f"Unexpected FITS shape: {data.shape}")
 
 
+# ============================================================
+#   INVERSE TRAINING TRANSFORMS
+# ============================================================
+def invert_training_transforms(pred, ltau):
+    """
+    pred shape: (N, 4*ltau)
+    Converts network output back to the space expected by
+    denormalise_output().
+    """
+
+    pred = pred.copy()
+
+    # ---- slices ----
+    temp_slice  = slice(0, ltau)
+    vlos_slice  = slice(ltau, 2*ltau)
+    vturb_slice = slice(2*ltau, 3*ltau)
+    blong_slice = slice(3*ltau, 4*ltau)
+
+    # --------------------------------------------------
+    # 1. undo log10 temperature
+    # --------------------------------------------------
+    if LOGTEMP:   # or whatever flag name you use in config
+        temp = pred[:, temp_slice]
+
+        # log10 -> linear
+        temp = np.power(10.0, temp)
+
+        # restore physical scale
+        temp *= OUTPUT_SCALES["temp"]
+
+        pred[:, temp_slice] = temp
+
+    # --------------------------------------------------
+    # 2. undo output rescaling
+    # --------------------------------------------------
+    if APPLY_OUTPUT_RESCALE:
+        pred[:, vlos_slice]  /= OUTPUT_MULTIPLIERS["vlos"]
+        pred[:, vturb_slice] /= OUTPUT_MULTIPLIERS["vturb"]
+        pred[:, blong_slice] /= OUTPUT_MULTIPLIERS["blong"]
+
+    return pred
+
+
 # =========================
 #        MAIN
 # =========================
@@ -150,7 +193,13 @@ def run_inference(ca_fits, si_fits, atm_out_h5, batch_size=1024):
     # =========================
     #   DE-NORMALISE & SAVE
     # =========================
-    atm = denormalise_output(out.reshape(-1, 4 * ltau), ltau)
+    flat = out.reshape(-1, 4 * ltau)
+
+    # ---- undo dataset transforms first ----
+    flat = invert_training_transforms(flat, ltau)
+
+    # ---- now denormalise to physical units ----
+    atm = denormalise_output(flat, ltau)
 
     with h5py.File(atm_out_h5, "w") as f:
 
