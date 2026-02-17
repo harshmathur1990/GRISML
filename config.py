@@ -44,6 +44,8 @@ OUTPUT_MULTIPLIERS = {
     "blong": 1e-1,   # magnetic fields often huge
 }
 
+APPLY_OUTPUT_RESCALE = True
+
 # config.py
 
 EARLY_STOPPING_PATIENCE = 10
