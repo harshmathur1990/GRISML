@@ -206,6 +206,39 @@ print("Vlos  min/max:", np.nanmin(vlos),  np.nanmax(vlos))
 print("Vturb min/max:", np.nanmin(vturb), np.nanmax(vturb))
 print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
 
+# ============================================================
+# TRAINING-TIME TARGET RANGE CHECK
+# ============================================================
+print("\n=== TRAINING TARGET STATS ===")
+
+Ncheck = min(len(full_ds), 5000)   # sample subset for speed
+idxs = np.linspace(0, len(full_ds)-1, Ncheck, dtype=int)
+
+y_all = []
+
+for i in idxs:
+    _, _, y = full_ds[i]   # <-- goes through __getitem__
+    y_all.append(y.numpy())
+
+y_all = np.stack(y_all)
+
+print("Y(train) global min/max:",
+      np.nanmin(y_all),
+      np.nanmax(y_all))
+
+ltau = y_all.shape[1] // 4
+
+temp  = y_all[:, :ltau]
+vlos  = y_all[:, ltau:2*ltau]
+vturb = y_all[:, 2*ltau:3*ltau]
+blong = y_all[:, 3*ltau:]
+
+print("\n--- TRAINING RANGES ---")
+print("Temp  min/max:", np.nanmin(temp),  np.nanmax(temp))
+print("Vlos  min/max:", np.nanmin(vlos),  np.nanmax(vlos))
+print("Vturb min/max:", np.nanmin(vturb), np.nanmax(vturb))
+print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
+
 
 # ============================================================
 # FINAL DATASETS

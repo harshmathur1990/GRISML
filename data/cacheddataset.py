@@ -33,6 +33,20 @@ class CachedDataset(Dataset):
 
             y[:ltau] = temp
 
+        # --------------------------------------------------
+        # optional dynamic-range scaling for other params
+        # --------------------------------------------------
+        if APPLY_OUTPUT_RESCALE:
+
+            # blocks
+            vlos_slice  = slice(ltau, 2*ltau)
+            vturb_slice = slice(2*ltau, 3*ltau)
+            blong_slice = slice(3*ltau, 4*ltau)
+
+            y[vlos_slice]  *= OUTPUT_MULTIPLIERS["vlos"]
+            y[vturb_slice] *= OUTPUT_MULTIPLIERS["vturb"]
+            y[blong_slice] *= OUTPUT_MULTIPLIERS["blong"]
+
         return (
             ca,
             si,

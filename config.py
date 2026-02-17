@@ -38,6 +38,12 @@ OUTPUT_SCALES = {
 
 LOGTEMP = True
 
+OUTPUT_MULTIPLIERS = {
+    "vlos": 1e-1,     # shrink km/s range
+    "vturb": 1e-1,
+    "blong": 1e-1,   # magnetic fields often huge
+}
+
 # config.py
 
 EARLY_STOPPING_PATIENCE = 10
