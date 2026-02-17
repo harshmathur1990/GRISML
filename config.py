@@ -41,7 +41,7 @@ LOGTEMP = True
 OUTPUT_MULTIPLIERS = {
     "vlos": 1e-1,     # shrink km/s range
     "vturb": 1e-1,
-    "blong": 1e-1,   # magnetic fields often huge
+    "blong": 1e1,   # magnetic fields often huge
 }
 
 APPLY_OUTPUT_RESCALE = True
