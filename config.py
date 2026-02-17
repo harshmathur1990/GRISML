@@ -18,7 +18,7 @@ DATA_CACHE = data_path / "dataset_cache.npz"
 # options:
 #   "stream"  → read pixels from HDF5 (best for cvfs)
 #   "full"    → load cubes fully to RAM first (best if on /dev/shm)
-DATA_LOADING_MODE = "full"
+DATA_LOADING_MODE = "stream"
 
 BATCH_SIZE = 1024
 EPOCHS = 50
