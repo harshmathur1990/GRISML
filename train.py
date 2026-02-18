@@ -180,6 +180,71 @@ def check_target_range(y, ranges, tag=""):
 
 
 # ============================================================
+# CHECK RANGE OF A DATALOADER (FAST)
+# ============================================================
+def check_loader_ranges(loader, name, max_batches=20):
+    """
+    Checks ranges of Ca, Si, Y from dataloader.
+    Only scans first max_batches for speed.
+    """
+    print(f"\n=== CHECKING {name} LOADER RANGES ===")
+
+    Ca_min, Ca_max = np.inf, -np.inf
+    Si_min, Si_max = np.inf, -np.inf
+    Y_min,  Y_max  = np.inf, -np.inf
+
+    # per-variable ranges
+    temp_min, temp_max   = np.inf, -np.inf
+    vlos_min, vlos_max   = np.inf, -np.inf
+    vturb_min, vturb_max = np.inf, -np.inf
+    blong_min, blong_max = np.inf, -np.inf
+
+    for i, (ca, si, y) in enumerate(loader):
+        ca = ca.numpy()
+        si = si.numpy()
+        y  = y.numpy()
+
+        Ca_min = min(Ca_min, np.nanmin(ca))
+        Ca_max = max(Ca_max, np.nanmax(ca))
+
+        Si_min = min(Si_min, np.nanmin(si))
+        Si_max = max(Si_max, np.nanmax(si))
+
+        Y_min  = min(Y_min,  np.nanmin(y))
+        Y_max  = max(Y_max,  np.nanmax(y))
+
+        # split atmosphere
+        ltau = y.shape[1] // 4
+
+        temp  = y[:, :ltau]
+        vlos  = y[:, ltau:2*ltau]
+        vturb = y[:, 2*ltau:3*ltau]
+        blong = y[:, 3*ltau:]
+
+        temp_min  = min(temp_min,  np.nanmin(temp))
+        temp_max  = max(temp_max,  np.nanmax(temp))
+        vlos_min  = min(vlos_min,  np.nanmin(vlos))
+        vlos_max  = max(vlos_max,  np.nanmax(vlos))
+        vturb_min = min(vturb_min, np.nanmin(vturb))
+        vturb_max = max(vturb_max, np.nanmax(vturb))
+        blong_min = min(blong_min, np.nanmin(blong))
+        blong_max = max(blong_max, np.nanmax(blong))
+
+        if i + 1 >= max_batches:
+            break
+
+    print(f"Ca   range: {Ca_min:.3e}  →  {Ca_max:.3e}")
+    print(f"Si   range: {Si_min:.3e}  →  {Si_max:.3e}")
+    print(f"Y    range: {Y_min:.3e}   →  {Y_max:.3e}")
+
+    print("\n--- per variable ---")
+    print(f"Temp : {temp_min:.3e} → {temp_max:.3e}")
+    print(f"Vlos : {vlos_min:.3e} → {vlos_max:.3e}")
+    print(f"Vturb: {vturb_min:.3e} → {vturb_max:.3e}")
+    print(f"Blong: {blong_min:.3e} → {blong_max:.3e}")
+
+
+# ============================================================
 # CACHE CHECK
 # ============================================================
 if os.path.exists(DATA_CACHE):
@@ -339,6 +404,10 @@ test_loader = DataLoader(
     pin_memory=True,
 )
 
+
+check_loader_ranges(train_loader, "TRAIN", max_batches=200)
+check_loader_ranges(val_loader,   "VAL", max_batches=200)
+check_loader_ranges(test_loader,  "TEST", max_batches=200)
 
 # ============================================================
 # 7. MODEL
