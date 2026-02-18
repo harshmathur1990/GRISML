@@ -84,6 +84,42 @@ def invert_training_transforms(pred, ltau):
     return pred
 
 
+# ============================================================
+#   DEBUG PRINTS FOR OUTPUT BLOCKS
+# ============================================================
+def print_block_stats(arr, ltau, label=""):
+    """
+    arr shape: (N, 4*ltau)
+    """
+
+    temp  = arr[:, :ltau]
+    vlos  = arr[:, ltau:2*ltau]
+    vturb = arr[:, 2*ltau:3*ltau]
+    blong = arr[:, 3*ltau:4*ltau]
+
+    print(f"\n--- {label} ---")
+    print("Temp  min/max:",  np.nanmin(temp),  np.nanmax(temp))
+    print("Vlos  min/max:",  np.nanmin(vlos),  np.nanmax(vlos))
+    print("Vturb min/max:",  np.nanmin(vturb), np.nanmax(vturb))
+    print("Blong min/max:",  np.nanmin(blong), np.nanmax(blong))
+
+
+# ============================================================
+#   DEBUG PRINTS FOR PHYSICAL ATMOSPHERE
+# ============================================================
+def print_atm_stats(atm, label="ATM"):
+    """
+    atm = dict returned by denormalise_output()
+    each entry shape: (N, ltau)
+    """
+
+    print(f"\n--- {label} ---")
+
+    for k in ["temp", "vlos", "vturb", "blong"]:
+        arr = atm[k]
+        print(f"{k:6s} min/max:", np.nanmin(arr), np.nanmax(arr))
+
+
 # =========================
 #        MAIN
 # =========================
@@ -195,11 +231,20 @@ def run_inference(ca_fits, si_fits, atm_out_h5, batch_size=1024):
     # =========================
     flat = out.reshape(-1, 4 * ltau)
 
-    # ---- undo dataset transforms first ----
+    # ---- before inverse transforms ----
+    print_block_stats(flat, ltau, "MODEL OUTPUT (network space)")
+
+    # ---- undo dataset transforms ----
     flat = invert_training_transforms(flat, ltau)
+
+    # ---- after inverse transforms ----
+    print_block_stats(flat, ltau, "AFTER INVERSE TRANSFORMS")
 
     # ---- now denormalise to physical units ----
     atm = denormalise_output(flat, ltau)
+
+    # ---- final physical atmosphere ----
+    print_atm_stats(atm, "FINAL PHYSICAL ATM")
 
     with h5py.File(atm_out_h5, "w") as f:
 
