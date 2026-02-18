@@ -156,38 +156,32 @@ def check_target_range(y, ranges, tag=""):
 # ============================================================
 # CHECK RANGE OF A DATALOADER (FAST)
 # ============================================================
-def check_loader_ranges(loader, name, max_batches=20):
-    """
-    Checks ranges of Ca, Si, Y from dataloader.
-    Only scans first max_batches for speed.
-    """
+# ============================================================
+# CHECK RANGE OF A DATALOADER + VERIFY AGAINST TARGET_RANGES
+# ============================================================
+def check_loader_ranges(loader, name, target_ranges=None, max_batches=50):
+
     print(f"\n=== CHECKING {name} LOADER RANGES ===")
 
     Ca_min, Ca_max = np.inf, -np.inf
     Si_min, Si_max = np.inf, -np.inf
-    Y_min,  Y_max  = np.inf, -np.inf
 
-    # per-variable ranges
     temp_min, temp_max   = np.inf, -np.inf
     vlos_min, vlos_max   = np.inf, -np.inf
     vturb_min, vturb_max = np.inf, -np.inf
     blong_min, blong_max = np.inf, -np.inf
 
     for i, (ca, si, y) in enumerate(loader):
+
         ca = ca.numpy()
         si = si.numpy()
         y  = y.numpy()
 
         Ca_min = min(Ca_min, np.nanmin(ca))
         Ca_max = max(Ca_max, np.nanmax(ca))
-
         Si_min = min(Si_min, np.nanmin(si))
         Si_max = max(Si_max, np.nanmax(si))
 
-        Y_min  = min(Y_min,  np.nanmin(y))
-        Y_max  = max(Y_max,  np.nanmax(y))
-
-        # split atmosphere
         ltau = y.shape[1] // 4
 
         temp  = y[:, :ltau]
@@ -207,15 +201,51 @@ def check_loader_ranges(loader, name, max_batches=20):
         if i + 1 >= max_batches:
             break
 
-    print(f"Ca   range: {Ca_min:.3e}  →  {Ca_max:.3e}")
-    print(f"Si   range: {Si_min:.3e}  →  {Si_max:.3e}")
-    print(f"Y    range: {Y_min:.3e}   →  {Y_max:.3e}")
+    print(f"Ca   range: {Ca_min:.3e} → {Ca_max:.3e}")
+    print(f"Si   range: {Si_min:.3e} → {Si_max:.3e}")
 
-    print("\n--- per variable ---")
+    print("\n--- targets ---")
     print(f"Temp : {temp_min:.3e} → {temp_max:.3e}")
     print(f"Vlos : {vlos_min:.3e} → {vlos_max:.3e}")
     print(f"Vturb: {vturb_min:.3e} → {vturb_max:.3e}")
     print(f"Blong: {blong_min:.3e} → {blong_max:.3e}")
+
+    # --------------------------------------------------------
+    # VERIFY AGAINST EXPECTED TARGET RANGES
+    # --------------------------------------------------------
+    if target_ranges is not None:
+        print("\n--- VERIFYING AGAINST TARGET_RANGES ---")
+
+        observed = {
+            "temp":  (temp_min, temp_max),
+            "vlos":  (vlos_min, vlos_max),
+            "vturb": (vturb_min, vturb_max),
+            "blong": (blong_min, blong_max),
+        }
+
+        for name, (mn, mx) in observed.items():
+
+            lo, hi = target_ranges[name]
+
+            # tolerance:
+            tol = 5e-3                    # float tolerance
+            margin = 0.2 * (hi - lo)      # statistical tolerance
+
+            bad = (
+                mn < lo - tol - margin or
+                mx > hi + tol + margin
+            )
+
+            if bad:
+                print(
+                    f"❌ RANGE VIOLATION {name}\n"
+                    f"observed = ({mn:.3e}, {mx:.3e})\n"
+                    f"expected = ({lo:.3e}, {hi:.3e})"
+                )
+            else:
+                print(
+                    f"✓ {name} within expected range"
+                )
 
 
 # ============================================================
@@ -380,9 +410,9 @@ test_loader = DataLoader(
 )
 
 
-check_loader_ranges(train_loader, "TRAIN", max_batches=200)
-check_loader_ranges(val_loader,   "VAL", max_batches=200)
-check_loader_ranges(test_loader,  "TEST", max_batches=200)
+check_loader_ranges(train_loader, "TRAIN", TARGET_RANGES, max_batches=200)
+check_loader_ranges(val_loader,   "VAL",   TARGET_RANGES, max_batches=200)
+check_loader_ranges(test_loader,  "TEST",  TARGET_RANGES, max_batches=200)
 
 # ============================================================
 # 7. MODEL
@@ -468,6 +498,7 @@ print_gpu_memory("after first forward")
 # ============================================================
 # 9. TRAINING
 # ============================================================
+
 for ep in range(EPOCHS):
 
     # -------------------------
@@ -475,6 +506,14 @@ for ep in range(EPOCHS):
     # -------------------------
     model.train()
     train_loss = 0.0
+
+    track_pred = (ep >= 10)   # start printing after epoch 10
+
+    if track_pred:
+        p_temp_min, p_temp_max   = np.inf, -np.inf
+        p_vlos_min, p_vlos_max   = np.inf, -np.inf
+        p_vturb_min, p_vturb_max = np.inf, -np.inf
+        p_blong_min, p_blong_max = np.inf, -np.inf
 
     train_pbar = tqdm(
         train_loader,
@@ -494,6 +533,28 @@ for ep in range(EPOCHS):
 
         pred = model(ca, si)
         loss = criterion(pred, y)
+
+        # ------------------------------------------------------------
+        # UPDATE PRED RANGE TRACKERS
+        # ------------------------------------------------------------
+        if track_pred:
+            with torch.no_grad():
+                p = pred.detach().cpu().numpy()
+                lt = p.shape[1] // 4
+
+                temp  = p[:, :lt]
+                vlos  = p[:, lt:2*lt]
+                vturb = p[:, 2*lt:3*lt]
+                blong = p[:, 3*lt:]
+
+                p_temp_min  = min(p_temp_min,  np.nanmin(temp))
+                p_temp_max  = max(p_temp_max,  np.nanmax(temp))
+                p_vlos_min  = min(p_vlos_min,  np.nanmin(vlos))
+                p_vlos_max  = max(p_vlos_max,  np.nanmax(vlos))
+                p_vturb_min = min(p_vturb_min, np.nanmin(vturb))
+                p_vturb_max = max(p_vturb_max, np.nanmax(vturb))
+                p_blong_min = min(p_blong_min, np.nanmin(blong))
+                p_blong_max = max(p_blong_max, np.nanmax(blong))
 
         loss.backward()
         optim.step()
@@ -525,6 +586,25 @@ for ep in range(EPOCHS):
             pred = model(ca, si)
             loss = criterion(pred, y)
 
+            if track_pred:
+            with torch.no_grad():
+                p = pred.detach().cpu().numpy()
+                lt = p.shape[1] // 4
+
+                temp  = p[:, :lt]
+                vlos  = p[:, lt:2*lt]
+                vturb = p[:, 2*lt:3*lt]
+                blong = p[:, 3*lt:]
+
+                p_temp_min  = min(p_temp_min,  np.nanmin(temp))
+                p_temp_max  = max(p_temp_max,  np.nanmax(temp))
+                p_vlos_min  = min(p_vlos_min,  np.nanmin(vlos))
+                p_vlos_max  = max(p_vlos_max,  np.nanmax(vlos))
+                p_vturb_min = min(p_vturb_min, np.nanmin(vturb))
+                p_vturb_max = max(p_vturb_max, np.nanmax(vturb))
+                p_blong_min = min(p_blong_min, np.nanmin(blong))
+                p_blong_max = max(p_blong_max, np.nanmax(blong))
+
             val_loss += loss.item()
             val_pbar.set_postfix(loss=f"{loss.item():.2e}")
 
@@ -538,6 +618,16 @@ for ep in range(EPOCHS):
         f"Train {train_loss:.3e} | "
         f"Val {val_loss:.3e}"
     )
+
+    # ------------------------------------------------------------
+    # PRINT PRED RANGE SUMMARY
+    # ------------------------------------------------------------
+    if track_pred:
+        print("\n--- Prediction ranges (train epoch) ---")
+        print(f"Temp : {p_temp_min:.3e} → {p_temp_max:.3e}")
+        print(f"Vlos : {p_vlos_min:.3e} → {p_vlos_max:.3e}")
+        print(f"Vturb: {p_vturb_min:.3e} → {p_vturb_max:.3e}")
+        print(f"Blong: {p_blong_min:.3e} → {p_blong_max:.3e}")
 
     print_gpu_memory(f"epoch {ep}")
 
