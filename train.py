@@ -548,22 +548,19 @@ for ep in range(EPOCHS):
         # ------------------------------------------------------------
         if track_pred:
             with torch.no_grad():
-                p = pred.detach().cpu().numpy()
-                lt = p.shape[1] // 4
+                lt = pred.shape[1] // 4
 
-                temp  = p[:, :lt]
-                vlos  = p[:, lt:2*lt]
-                vturb = p[:, 2*lt:3*lt]
-                blong = p[:, 3*lt:]
+                p_temp_min  = min(p_temp_min,  pred[:, :lt].min().item())
+                p_temp_max  = max(p_temp_max,  pred[:, :lt].max().item())
 
-                p_temp_min  = min(p_temp_min,  np.nanmin(temp))
-                p_temp_max  = max(p_temp_max,  np.nanmax(temp))
-                p_vlos_min  = min(p_vlos_min,  np.nanmin(vlos))
-                p_vlos_max  = max(p_vlos_max,  np.nanmax(vlos))
-                p_vturb_min = min(p_vturb_min, np.nanmin(vturb))
-                p_vturb_max = max(p_vturb_max, np.nanmax(vturb))
-                p_blong_min = min(p_blong_min, np.nanmin(blong))
-                p_blong_max = max(p_blong_max, np.nanmax(blong))
+                p_vlos_min  = min(p_vlos_min,  pred[:, lt:2*lt].min().item())
+                p_vlos_max  = max(p_vlos_max,  pred[:, lt:2*lt].max().item())
+
+                p_vturb_min = min(p_vturb_min, pred[:, 2*lt:3*lt].min().item())
+                p_vturb_max = max(p_vturb_max, pred[:, 2*lt:3*lt].max().item())
+
+                p_blong_min = min(p_blong_min, pred[:, 3*lt:].min().item())
+                p_blong_max = max(p_blong_max, pred[:, 3*lt:].max().item())
 
         loss.backward()
         optim.step()
@@ -597,22 +594,19 @@ for ep in range(EPOCHS):
 
             if track_pred:
                 with torch.no_grad():
-                    p = pred.detach().cpu().numpy()
-                    lt = p.shape[1] // 4
+                    lt = pred.shape[1] // 4
 
-                    temp  = p[:, :lt]
-                    vlos  = p[:, lt:2*lt]
-                    vturb = p[:, 2*lt:3*lt]
-                    blong = p[:, 3*lt:]
+                    p_temp_min  = min(p_temp_min,  pred[:, :lt].min().item())
+                    p_temp_max  = max(p_temp_max,  pred[:, :lt].max().item())
 
-                    p_temp_min  = min(p_temp_min,  np.nanmin(temp))
-                    p_temp_max  = max(p_temp_max,  np.nanmax(temp))
-                    p_vlos_min  = min(p_vlos_min,  np.nanmin(vlos))
-                    p_vlos_max  = max(p_vlos_max,  np.nanmax(vlos))
-                    p_vturb_min = min(p_vturb_min, np.nanmin(vturb))
-                    p_vturb_max = max(p_vturb_max, np.nanmax(vturb))
-                    p_blong_min = min(p_blong_min, np.nanmin(blong))
-                    p_blong_max = max(p_blong_max, np.nanmax(blong))
+                    p_vlos_min  = min(p_vlos_min,  pred[:, lt:2*lt].min().item())
+                    p_vlos_max  = max(p_vlos_max,  pred[:, lt:2*lt].max().item())
+
+                    p_vturb_min = min(p_vturb_min, pred[:, 2*lt:3*lt].min().item())
+                    p_vturb_max = max(p_vturb_max, pred[:, 2*lt:3*lt].max().item())
+
+                    p_blong_min = min(p_blong_min, pred[:, 3*lt:].min().item())
+                    p_blong_max = max(p_blong_max, pred[:, 3*lt:].max().item())
 
             val_loss += loss.item()
             val_pbar.set_postfix(loss=f"{loss.item():.2e}")
