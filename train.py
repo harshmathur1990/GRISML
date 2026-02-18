@@ -472,13 +472,16 @@ criterion = AtmosLoss(
     vturb_zero_weight=5.0   # forces vturb → 0 strongly
 )
 
-optim = torch.optim.Adam(model.parameters(), lr=LR)
+if DO_TRAIN:
+    optim = torch.optim.Adam(model.parameters(), lr=LR)
 
-early_stopping = EarlyStopping(
-    patience=EARLY_STOPPING_PATIENCE,
-    min_delta=MIN_DELTA,
-    path=CHECKPOINT_PATH,
-)
+    early_stopping = EarlyStopping(
+        patience=EARLY_STOPPING_PATIENCE,
+        min_delta=MIN_DELTA,
+        path=CHECKPOINT_PATH,
+    )
+else:
+    print("\n🚀 DO_TRAIN=False → skipping training phase")
 
 print_gpu_memory("after model init")
 
@@ -507,91 +510,45 @@ print_gpu_memory("after first forward")
 # ============================================================
 # 9. TRAINING
 # ============================================================
+if DO_TRAIN:
+    for ep in range(EPOCHS):
 
-for ep in range(EPOCHS):
+        # -------------------------
+        # TRAIN
+        # -------------------------
+        model.train()
+        train_loss = 0.0
 
-    # -------------------------
-    # TRAIN
-    # -------------------------
-    model.train()
-    train_loss = 0.0
+        track_pred = True  #(ep >= 10)   # start printing after epoch 10
 
-    track_pred = True  #(ep >= 10)   # start printing after epoch 10
-
-    if track_pred:
-        p_temp_min, p_temp_max   = np.inf, -np.inf
-        p_vlos_min, p_vlos_max   = np.inf, -np.inf
-        p_vturb_min, p_vturb_max = np.inf, -np.inf
-        p_blong_min, p_blong_max = np.inf, -np.inf
-
-    train_pbar = tqdm(
-        train_loader,
-        desc=f"Epoch {ep:03d} [train]",
-        leave=False,
-    )
-
-    for ca, si, y in train_pbar:
-
-        # check_target_range(y, TARGET_RANGES, tag="train")
-
-        ca = ca.to(device, non_blocking=True)
-        si = si.to(device, non_blocking=True)
-        y  = y.to(device, non_blocking=True)
-
-        optim.zero_grad(set_to_none=True)
-
-        pred = model(ca, si)
-        loss = criterion(pred, y)
-
-        # ------------------------------------------------------------
-        # UPDATE PRED RANGE TRACKERS
-        # ------------------------------------------------------------
         if track_pred:
-            with torch.no_grad():
-                lt = pred.shape[1] // 4
+            p_temp_min, p_temp_max   = np.inf, -np.inf
+            p_vlos_min, p_vlos_max   = np.inf, -np.inf
+            p_vturb_min, p_vturb_max = np.inf, -np.inf
+            p_blong_min, p_blong_max = np.inf, -np.inf
 
-                p_temp_min  = min(p_temp_min,  pred[:, :lt].min().item())
-                p_temp_max  = max(p_temp_max,  pred[:, :lt].max().item())
+        train_pbar = tqdm(
+            train_loader,
+            desc=f"Epoch {ep:03d} [train]",
+            leave=False,
+        )
 
-                p_vlos_min  = min(p_vlos_min,  pred[:, lt:2*lt].min().item())
-                p_vlos_max  = max(p_vlos_max,  pred[:, lt:2*lt].max().item())
+        for ca, si, y in train_pbar:
 
-                p_vturb_min = min(p_vturb_min, pred[:, 2*lt:3*lt].min().item())
-                p_vturb_max = max(p_vturb_max, pred[:, 2*lt:3*lt].max().item())
-
-                p_blong_min = min(p_blong_min, pred[:, 3*lt:].min().item())
-                p_blong_max = max(p_blong_max, pred[:, 3*lt:].max().item())
-
-        loss.backward()
-        optim.step()
-
-        train_loss += loss.item()
-        train_pbar.set_postfix(loss=f"{loss.item():.2e}")
-
-    train_loss /= len(train_loader)
-
-    # -------------------------
-    # VALIDATION
-    # -------------------------
-    model.eval()
-    val_loss = 0.0
-
-    val_pbar = tqdm(
-        val_loader,
-        desc=f"Epoch {ep:03d} [val]",
-        leave=False,
-    )
-
-    with torch.no_grad():
-        for ca, si, y in val_pbar:
             # check_target_range(y, TARGET_RANGES, tag="train")
+
             ca = ca.to(device, non_blocking=True)
             si = si.to(device, non_blocking=True)
             y  = y.to(device, non_blocking=True)
 
+            optim.zero_grad(set_to_none=True)
+
             pred = model(ca, si)
             loss = criterion(pred, y)
 
+            # ------------------------------------------------------------
+            # UPDATE PRED RANGE TRACKERS
+            # ------------------------------------------------------------
             if track_pred:
                 with torch.no_grad():
                     lt = pred.shape[1] // 4
@@ -608,42 +565,88 @@ for ep in range(EPOCHS):
                     p_blong_min = min(p_blong_min, pred[:, 3*lt:].min().item())
                     p_blong_max = max(p_blong_max, pred[:, 3*lt:].max().item())
 
-            val_loss += loss.item()
-            val_pbar.set_postfix(loss=f"{loss.item():.2e}")
+            loss.backward()
+            optim.step()
 
-    val_loss /= len(val_loader)
+            train_loss += loss.item()
+            train_pbar.set_postfix(loss=f"{loss.item():.2e}")
 
-    # -------------------------
-    # LOGGING
-    # -------------------------
-    print(
-        f"Epoch {ep:03d} | "
-        f"Train {train_loss:.3e} | "
-        f"Val {val_loss:.3e}"
-    )
+        train_loss /= len(train_loader)
 
-    # ------------------------------------------------------------
-    # PRINT PRED RANGE SUMMARY
-    # ------------------------------------------------------------
-    if track_pred:
-        print("--- Prediction ranges (train epoch) ---")
-        print(f"Temp : {p_temp_min:.3e} → {p_temp_max:.3e}")
-        print(f"Vlos : {p_vlos_min:.3e} → {p_vlos_max:.3e}")
-        print(f"Vturb: {p_vturb_min:.3e} → {p_vturb_max:.3e}")
-        print(f"Blong: {p_blong_min:.3e} → {p_blong_max:.3e}")
-        print("--- Prediction ranges (train epoch) ---\n")
+        # -------------------------
+        # VALIDATION
+        # -------------------------
+        model.eval()
+        val_loss = 0.0
 
-    print_gpu_memory(f"epoch {ep}")
-
-    # -------------------------
-    # EARLY STOPPING
-    # -------------------------
-    if early_stopping.step(val_loss, model):
-        print(
-            f"Early stopping at epoch {ep} | "
-            f"Best val = {early_stopping.best_loss:.3e}"
+        val_pbar = tqdm(
+            val_loader,
+            desc=f"Epoch {ep:03d} [val]",
+            leave=False,
         )
-        break
+
+        with torch.no_grad():
+            for ca, si, y in val_pbar:
+                # check_target_range(y, TARGET_RANGES, tag="train")
+                ca = ca.to(device, non_blocking=True)
+                si = si.to(device, non_blocking=True)
+                y  = y.to(device, non_blocking=True)
+
+                pred = model(ca, si)
+                loss = criterion(pred, y)
+
+                if track_pred:
+                    with torch.no_grad():
+                        lt = pred.shape[1] // 4
+
+                        p_temp_min  = min(p_temp_min,  pred[:, :lt].min().item())
+                        p_temp_max  = max(p_temp_max,  pred[:, :lt].max().item())
+
+                        p_vlos_min  = min(p_vlos_min,  pred[:, lt:2*lt].min().item())
+                        p_vlos_max  = max(p_vlos_max,  pred[:, lt:2*lt].max().item())
+
+                        p_vturb_min = min(p_vturb_min, pred[:, 2*lt:3*lt].min().item())
+                        p_vturb_max = max(p_vturb_max, pred[:, 2*lt:3*lt].max().item())
+
+                        p_blong_min = min(p_blong_min, pred[:, 3*lt:].min().item())
+                        p_blong_max = max(p_blong_max, pred[:, 3*lt:].max().item())
+
+                val_loss += loss.item()
+                val_pbar.set_postfix(loss=f"{loss.item():.2e}")
+
+        val_loss /= len(val_loader)
+
+        # -------------------------
+        # LOGGING
+        # -------------------------
+        print(
+            f"Epoch {ep:03d} | "
+            f"Train {train_loss:.3e} | "
+            f"Val {val_loss:.3e}"
+        )
+
+        # ------------------------------------------------------------
+        # PRINT PRED RANGE SUMMARY
+        # ------------------------------------------------------------
+        if track_pred:
+            print("--- Prediction ranges (train epoch) ---")
+            print(f"Temp : {p_temp_min:.3e} → {p_temp_max:.3e}")
+            print(f"Vlos : {p_vlos_min:.3e} → {p_vlos_max:.3e}")
+            print(f"Vturb: {p_vturb_min:.3e} → {p_vturb_max:.3e}")
+            print(f"Blong: {p_blong_min:.3e} → {p_blong_max:.3e}")
+            print("--- Prediction ranges (train epoch) ---\n")
+
+        print_gpu_memory(f"epoch {ep}")
+
+        # -------------------------
+        # EARLY STOPPING
+        # -------------------------
+        if early_stopping.step(val_loss, model):
+            print(
+                f"Early stopping at epoch {ep} | "
+                f"Best val = {early_stopping.best_loss:.3e}"
+            )
+            break
 
 print("Loading best model for test evaluation")
 state = torch.load(CHECKPOINT_PATH, map_location=device)
@@ -657,6 +660,12 @@ model.eval()
 
 test_loss = 0.0
 
+if track_pred:
+    p_temp_min, p_temp_max   = np.inf, -np.inf
+    p_vlos_min, p_vlos_max   = np.inf, -np.inf
+    p_vturb_min, p_vturb_max = np.inf, -np.inf
+    p_blong_min, p_blong_max = np.inf, -np.inf
+
 with torch.no_grad():
     for ca, si, y in tqdm(test_loader, desc="Test", leave=False):
         ca = ca.to(device, non_blocking=True)
@@ -666,8 +675,33 @@ with torch.no_grad():
         pred = model(ca, si)
         loss = criterion(pred, y)
 
+        if track_pred:
+            with torch.no_grad():
+                lt = pred.shape[1] // 4
+
+                p_temp_min  = min(p_temp_min,  pred[:, :lt].min().item())
+                p_temp_max  = max(p_temp_max,  pred[:, :lt].max().item())
+
+                p_vlos_min  = min(p_vlos_min,  pred[:, lt:2*lt].min().item())
+                p_vlos_max  = max(p_vlos_max,  pred[:, lt:2*lt].max().item())
+
+                p_vturb_min = min(p_vturb_min, pred[:, 2*lt:3*lt].min().item())
+                p_vturb_max = max(p_vturb_max, pred[:, 2*lt:3*lt].max().item())
+
+                p_blong_min = min(p_blong_min, pred[:, 3*lt:].min().item())
+                p_blong_max = max(p_blong_max, pred[:, 3*lt:].max().item())
+
         test_loss += loss.item()
 
 test_loss /= len(test_loader)
 
 print(f"FINAL TEST LOSS (unbiased): {test_loss:.3e}")
+
+if track_pred:
+    print("--- Prediction ranges (val epoch) ---")
+    print(f"Temp : {p_temp_min:.3e} → {p_temp_max:.3e}")
+    print(f"Vlos : {p_vlos_min:.3e} → {p_vlos_max:.3e}")
+    print(f"Vturb: {p_vturb_min:.3e} → {p_vturb_max:.3e}")
+    print(f"Blong: {p_blong_min:.3e} → {p_blong_max:.3e}")
+    print("--- Prediction ranges (val epoch) ---\n")
+
