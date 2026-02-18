@@ -507,6 +507,8 @@ with torch.no_grad():
 print_gpu_memory("after first forward")
 
 
+track_pred = True  #(ep >= 10)   # start printing after epoch 10
+
 # ============================================================
 # 9. TRAINING
 # ============================================================
@@ -518,8 +520,6 @@ if DO_TRAIN:
         # -------------------------
         model.train()
         train_loss = 0.0
-
-        track_pred = True  #(ep >= 10)   # start printing after epoch 10
 
         if track_pred:
             p_temp_min, p_temp_max   = np.inf, -np.inf
