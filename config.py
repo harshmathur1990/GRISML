@@ -36,6 +36,14 @@ OUTPUT_SCALES = {
     "blong": 1e-4,
 }
 
+
+LOSS_WEIGHTS = {
+    "temp":  5.0,   # dominant physics
+    "vlos":  1.5,   # medium
+    "blong": 1.5,   # medium
+    "vturb": 0.2,   # weak (almost ignored)
+}
+
 LOGTEMP = True
 
 OUTPUT_MULTIPLIERS = {

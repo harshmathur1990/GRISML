@@ -462,7 +462,16 @@ print("Ca λ mask shape:", model_core.ca_encoder.w_lambda.shape)
 print("Si λ mask shape:", model_core.si_encoder.w_lambda.shape)
 print("Stokes scale:", model_core.ca_encoder.w_stokes.squeeze())
 
-criterion = AtmosLoss()
+criterion = AtmosLoss(
+    weights={
+        "temp": 5.0,
+        "vlos": 1.5,
+        "blong": 1.5,
+        "vturb": 0.1,
+    },
+    vturb_zero_weight=5.0   # forces vturb → 0 strongly
+)
+
 optim = torch.optim.Adam(model.parameters(), lr=LR)
 
 early_stopping = EarlyStopping(
