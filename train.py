@@ -144,6 +144,42 @@ def get_valid_indices(stic_h5, wav_index=520, stokes_index=0, thr=3):
 
 
 # ============================================================
+# CHECK TARGET RANGE FROM DATALOADER
+# ============================================================
+def check_target_range(y, ranges, tag=""):
+    with torch.no_grad():
+        y_np = y.detach().cpu().numpy()
+
+        ltau = y_np.shape[1] // 4
+
+        temp  = y_np[:, :ltau]
+        vlos  = y_np[:, ltau:2*ltau]
+        vturb = y_np[:, 2*ltau:3*ltau]
+        blong = y_np[:, 3*ltau:]
+
+        checks = {
+            "temp":  temp,
+            "vlos":  vlos,
+            "vturb": vturb,
+            "blong": blong,
+        }
+
+        for name, arr in checks.items():
+            mn, mx = np.nanmin(arr), np.nanmax(arr)
+            lo, hi = ranges[name]
+
+            # small tolerance for float differences
+            tol = 1e-5 * max(abs(lo), abs(hi), 1.0)
+
+            if mn < lo - tol or mx > hi + tol:
+                print(
+                    f"\n❌ TARGET RANGE MISMATCH [{tag}] {name}\n"
+                    f"batch = ({mn:.3e}, {mx:.3e})\n"
+                    f"data  = ({lo:.3e}, {hi:.3e})"
+                )
+
+
+# ============================================================
 # CACHE CHECK
 # ============================================================
 if os.path.exists(DATA_CACHE):
@@ -239,6 +275,18 @@ print("Vlos  min/max:", np.nanmin(vlos),  np.nanmax(vlos))
 print("Vturb min/max:", np.nanmin(vturb), np.nanmax(vturb))
 print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
 
+# ============================================================
+# STORE PHYSICAL TRAINING RANGES
+# ============================================================
+# ============================================================
+# STORE TARGET RANGES USED FOR TRAINING
+# ============================================================
+TARGET_RANGES = {
+    "temp":  (np.nanmin(temp),  np.nanmax(temp)),
+    "vlos":  (np.nanmin(vlos),  np.nanmax(vlos)),
+    "vturb": (np.nanmin(vturb), np.nanmax(vturb)),
+    "blong": (np.nanmin(blong), np.nanmax(blong)),
+}
 
 # ============================================================
 # FINAL DATASETS
@@ -391,6 +439,9 @@ for ep in range(EPOCHS):
     )
 
     for ca, si, y in train_pbar:
+
+        check_target_range(y, TARGET_RANGES, tag="train")
+
         ca = ca.to(device, non_blocking=True)
         si = si.to(device, non_blocking=True)
         y  = y.to(device, non_blocking=True)
@@ -422,6 +473,7 @@ for ep in range(EPOCHS):
 
     with torch.no_grad():
         for ca, si, y in val_pbar:
+            check_target_range(y, TARGET_RANGES, tag="train")
             ca = ca.to(device, non_blocking=True)
             si = si.to(device, non_blocking=True)
             y  = y.to(device, non_blocking=True)
