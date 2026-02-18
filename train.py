@@ -507,7 +507,7 @@ for ep in range(EPOCHS):
     model.train()
     train_loss = 0.0
 
-    track_pred = (ep >= 10)   # start printing after epoch 10
+    track_pred = True  #(ep >= 10)   # start printing after epoch 10
 
     if track_pred:
         p_temp_min, p_temp_max   = np.inf, -np.inf
@@ -523,7 +523,7 @@ for ep in range(EPOCHS):
 
     for ca, si, y in train_pbar:
 
-        check_target_range(y, TARGET_RANGES, tag="train")
+        # check_target_range(y, TARGET_RANGES, tag="train")
 
         ca = ca.to(device, non_blocking=True)
         si = si.to(device, non_blocking=True)
@@ -578,7 +578,7 @@ for ep in range(EPOCHS):
 
     with torch.no_grad():
         for ca, si, y in val_pbar:
-            check_target_range(y, TARGET_RANGES, tag="train")
+            # check_target_range(y, TARGET_RANGES, tag="train")
             ca = ca.to(device, non_blocking=True)
             si = si.to(device, non_blocking=True)
             y  = y.to(device, non_blocking=True)
