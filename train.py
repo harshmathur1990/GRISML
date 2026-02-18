@@ -101,33 +101,7 @@ def print_gpu_memory(tag=""):
 with h5py.File(ATM_H5, "r") as f:
     _, _, _, ltau = f["temp"].shape
 
-# # ---- Ca FITS ----
-# with fits.open(CA_FITS, memmap=True) as f:
-#     ca_shape = f[0].data.shape
-
-# if len(ca_shape) == 5:
-#     _, _, _, _, lca = ca_shape
-# elif len(ca_shape) == 4:
-#     _, _, _, lca = ca_shape
-# else:
-#     raise ValueError(f"Unexpected Ca FITS shape: {ca_shape}")
-
-# # ---- Si FITS ----
-# with fits.open(SI_FITS, memmap=True) as f:
-#     si_shape = f[0].data.shape
-
-# if len(si_shape) == 5:
-#     _, _, _, _, lsi = si_shape
-# elif len(si_shape) == 4:
-#     _, _, _, lsi = si_shape
-# else:
-#     raise ValueError(f"Unexpected Si FITS shape: {si_shape}")
-
 n_stokes = len(STOKES_IDX)
-
-# print(f"Atmosphere shape: t={t}, y={y}, x={x}, ltau={ltau}")
-# print(f"Ca λ points: {lca}")
-# print(f"Si λ points: {lsi}")
 
 
 def get_valid_indices(stic_h5, wav_index=520, stokes_index=0, thr=3):
@@ -312,7 +286,7 @@ print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
 # ============================================================
 print("\n=== TRAINING TARGET STATS ===")
 
-Ncheck = min(len(full_ds), 5000)   # sample subset for speed
+Ncheck = len(full_ds)  # sample subset for speed
 idxs = np.linspace(0, len(full_ds)-1, Ncheck, dtype=int)
 
 y_all = []
@@ -509,7 +483,7 @@ for ep in range(EPOCHS):
 
     for ca, si, y in train_pbar:
 
-        check_target_range(y, TARGET_RANGES, tag="train")
+        # check_target_range(y, TARGET_RANGES, tag="train")
 
         ca = ca.to(device, non_blocking=True)
         si = si.to(device, non_blocking=True)
@@ -542,7 +516,7 @@ for ep in range(EPOCHS):
 
     with torch.no_grad():
         for ca, si, y in val_pbar:
-            check_target_range(y, TARGET_RANGES, tag="train")
+            # check_target_range(y, TARGET_RANGES, tag="train")
             ca = ca.to(device, non_blocking=True)
             si = si.to(device, non_blocking=True)
             y  = y.to(device, non_blocking=True)
