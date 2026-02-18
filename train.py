@@ -626,11 +626,12 @@ for ep in range(EPOCHS):
     # PRINT PRED RANGE SUMMARY
     # ------------------------------------------------------------
     if track_pred:
-        print("\n--- Prediction ranges (train epoch) ---")
+        print("--- Prediction ranges (train epoch) ---")
         print(f"Temp : {p_temp_min:.3e} → {p_temp_max:.3e}")
         print(f"Vlos : {p_vlos_min:.3e} → {p_vlos_max:.3e}")
         print(f"Vturb: {p_vturb_min:.3e} → {p_vturb_max:.3e}")
         print(f"Blong: {p_blong_min:.3e} → {p_blong_max:.3e}")
+        print("--- Prediction ranges (train epoch) ---\n")
 
     print_gpu_memory(f"epoch {ep}")
 
