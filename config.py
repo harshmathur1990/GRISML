@@ -56,6 +56,11 @@ APPLY_OUTPUT_RESCALE = True
 
 # config.py
 
+# ============================================================
+# RUN CONTROL
+# ============================================================
+DO_TRAIN = False     # False → skip training, only load best model + validate/test
+
 EARLY_STOPPING_PATIENCE = 10
 CHECKPOINT_PATH = "best_model.pt"
 MIN_DELTA = 0.0   # minimum improvement to count
