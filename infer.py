@@ -129,6 +129,13 @@ def run_inference(ca_fits, si_fits, atm_out_h5, batch_size=1024):
     ca, has_time = load_fits_data(ca_fits)
     si, _ = load_fits_data(si_fits)
 
+    print("\n=== INPUT DATA STATS ===")
+    print("Ca shape:", ca.shape)
+    print("Si shape:", si.shape)
+
+    print("Ca min/max:", np.nanmin(ca), np.nanmax(ca))
+    print("Si min/max:", np.nanmin(si), np.nanmax(si))
+
     t, s, y, x, _ = ca.shape
     n_stokes = len(STOKES_IDX)
 
