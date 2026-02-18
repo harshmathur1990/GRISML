@@ -286,13 +286,14 @@ print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
 # ============================================================
 print("\n=== TRAINING TARGET STATS ===")
 
-Ncheck = len(full_ds)  # sample subset for speed
+Ncheck = len(full_ds)
 idxs = np.linspace(0, len(full_ds)-1, Ncheck, dtype=int)
 
+print ("Ncheck: {}".format(Ncheck))
 y_all = []
 
 for i in idxs:
-    _, _, y = full_ds[i]   # <-- goes through __getitem__
+    _, _, y = full_ds[i]
     y_all.append(y.numpy())
 
 y_all = np.stack(y_all)
@@ -483,7 +484,7 @@ for ep in range(EPOCHS):
 
     for ca, si, y in train_pbar:
 
-        # check_target_range(y, TARGET_RANGES, tag="train")
+        check_target_range(y, TARGET_RANGES, tag="train")
 
         ca = ca.to(device, non_blocking=True)
         si = si.to(device, non_blocking=True)
@@ -516,7 +517,7 @@ for ep in range(EPOCHS):
 
     with torch.no_grad():
         for ca, si, y in val_pbar:
-            # check_target_range(y, TARGET_RANGES, tag="train")
+            check_target_range(y, TARGET_RANGES, tag="train")
             ca = ca.to(device, non_blocking=True)
             si = si.to(device, non_blocking=True)
             y  = y.to(device, non_blocking=True)
