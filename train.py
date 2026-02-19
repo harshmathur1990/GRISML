@@ -507,7 +507,7 @@ with torch.no_grad():
 print_gpu_memory("after first forward")
 
 
-track_pred = True  #(ep >= 10)   # start printing after epoch 10
+track_pred = TRACK_PRED
 
 # ============================================================
 # 9. TRAINING
