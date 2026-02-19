@@ -386,9 +386,9 @@ train_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, train_idx)
 val_ds   = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, val_idx)
 test_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, test_idx)
 
-train_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, train_idx)
-val_ds   = CaSiAtmosDataset(STIC_h5, ATM_H5, val_idx)
-test_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, test_idx)
+# train_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, train_idx)
+# val_ds   = CaSiAtmosDataset(STIC_h5, ATM_H5, val_idx)
+# test_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, test_idx)
 
 # ============================================================
 # 5. DATALOADERS (FINAL)
@@ -415,9 +415,9 @@ test_loader = DataLoader(
 )
 
 
-check_loader_ranges(train_loader, "TRAIN", TARGET_RANGES, max_batches=200)
-check_loader_ranges(val_loader,   "VAL",   TARGET_RANGES, max_batches=200)
-check_loader_ranges(test_loader,  "TEST",  TARGET_RANGES, max_batches=200)
+# check_loader_ranges(train_loader, "TRAIN", TARGET_RANGES, max_batches=200)
+# check_loader_ranges(val_loader,   "VAL",   TARGET_RANGES, max_batches=200)
+# check_loader_ranges(test_loader,  "TEST",  TARGET_RANGES, max_batches=200)
 
 # ============================================================
 # 7. MODEL
