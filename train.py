@@ -1,11 +1,11 @@
 import os
-os.environ["NCCL_P2P_DISABLE"] = "1"
-os.environ["NCCL_IB_DISABLE"] = "1"
-os.environ["NCCL_SHM_DISABLE"] = "0"
-os.environ["NCCL_DEBUG"] = "INFO"
-os.environ["PYTORCH_NVML_BASED_CUDA_CHECK"] = "0"
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"   # optional, helps stability
-os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"
+# os.environ["NCCL_P2P_DISABLE"] = "1"
+# os.environ["NCCL_IB_DISABLE"] = "1"
+# os.environ["NCCL_SHM_DISABLE"] = "0"
+# os.environ["NCCL_DEBUG"] = "INFO"
+# os.environ["PYTORCH_NVML_BASED_CUDA_CHECK"] = "0"
+# os.environ["CUDA_LAUNCH_BLOCKING"] = "1"   # optional, helps stability
+# os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":16:8"
 import h5py
 from astropy.io import fits
 import torch
