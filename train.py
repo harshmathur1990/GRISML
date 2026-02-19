@@ -9,8 +9,8 @@ import os
 import h5py
 from astropy.io import fits
 import torch
-torch.backends.cudnn.benchmark = False
-torch.backends.cudnn.deterministic = True
+# torch.backends.cudnn.benchmark = False
+# torch.backends.cudnn.deterministic = True
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import numpy as np
