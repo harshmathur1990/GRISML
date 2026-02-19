@@ -242,10 +242,10 @@ def run_inference(ca_fits, si_fits, atm_out_h5, batch_size=1024):
     print_block_stats(flat, ltau, "MODEL OUTPUT (network space)")
 
     # ---- undo dataset transforms ----
-    flat = invert_training_transforms(flat, ltau)
+    # flat = invert_training_transforms(flat, ltau)
 
     # ---- after inverse transforms ----
-    print_block_stats(flat, ltau, "AFTER INVERSE TRANSFORMS")
+    # print_block_stats(flat, ltau, "AFTER INVERSE TRANSFORMS")
 
     # ---- now denormalise to physical units ----
     atm = denormalise_output(flat, ltau)
