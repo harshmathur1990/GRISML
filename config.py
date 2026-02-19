@@ -5,13 +5,13 @@ base_path = Path('/mn/stornext/u3/harshm/Documents/Data/GRIS')
 data_path = base_path / 'KMeans-Inversions' / 'fulldata_inversions'
 dev_shm = Path("/dev/shm")
 
-# CA_FITS  = base_path / 'spectralveil_corrected_25Apr25ARM2-004.fits_squarred_pixels.fits_aligned_downsampled_streamed.fits'
-# SI_FITS  = base_path / 'spectralveil_corrected_25Apr25ARM1-004.fits_squarred_pixels.fits_aligned_downsampled_streamed.fits'
-# ATM_H5   = data_path / 'combined_output_004_atmos_B_cycle_1.nc'
+CA_FITS  = base_path / 'spectralveil_corrected_25Apr25ARM2-004.fits_squarred_pixels.fits_aligned_downsampled_streamed.fits'
+SI_FITS  = base_path / 'spectralveil_corrected_25Apr25ARM1-004.fits_squarred_pixels.fits_aligned_downsampled_streamed.fits'
+ATM_H5   = data_path / 'combined_output_004_atmos_B_cycle_1.nc'
 
 
-STIC_h5 = dev_shm / 'bifrost_output.nc'
-ATM_H5 = dev_shm / 'bifrost.nc'
+# STIC_h5 = dev_shm / 'bifrost_output.nc'
+# ATM_H5 = dev_shm / 'bifrost.nc'
 
 DATA_CACHE = data_path / "dataset_cache.npz"
 

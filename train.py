@@ -15,8 +15,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import numpy as np
 from config import *
-# from data.datasets import CaSiAtmosDataset
-from data.bifrostdataset import CaSiAtmosDataset
+from data.datasets import CaSiAtmosDataset
+# from data.bifrostdataset import CaSiAtmosDataset
 from data.cacheddataset import CachedDataset
 from utils.split import make_splits
 from models.model import CaSiInversionCNN
@@ -104,7 +104,7 @@ def print_gpu_memory(tag=""):
 
 # ---- atmosphere defines (t, y, x) ----
 with h5py.File(ATM_H5, "r") as f:
-    _, _, _, ltau = f["temp"].shape
+    t, y, x, ltau = f["temp"].shape
 
 n_stokes = len(STOKES_IDX)
 
@@ -256,99 +256,99 @@ def check_loader_ranges(loader, name, target_ranges=None, max_batches=50):
 # ============================================================
 # CACHE CHECK
 # ============================================================
-if os.path.exists(DATA_CACHE):
+# if os.path.exists(DATA_CACHE):
 
-    Ca, Si, Y, train_idx, val_idx, test_idx = load_dataset_cache(DATA_CACHE)
+#     Ca, Si, Y, train_idx, val_idx, test_idx = load_dataset_cache(DATA_CACHE)
 
-    full_ds = CachedDataset(Ca, Si, Y, logtemp=LOGTEMP)
+#     full_ds = CachedDataset(Ca, Si, Y, logtemp=LOGTEMP)
 
-else:
+# else:
 
-    print("No dataset cache found — building dataset...")
+#     print("No dataset cache found — building dataset...")
 
-    valid_idx = get_valid_indices(STIC_h5)
-    valid_idx.sort(key=lambda p: (p[0], p[1], p[2]))
+#     valid_idx = get_valid_indices(STIC_h5)
+#     valid_idx.sort(key=lambda p: (p[0], p[1], p[2]))
 
-    full_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, valid_idx, logtemp=LOGTEMP)
+#     full_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, valid_idx, logtemp=LOGTEMP)
 
-    N = len(full_ds)
-    all_idx = np.arange(N)
+#     N = len(full_ds)
+#     all_idx = np.arange(N)
 
-    train_idx, val_idx, test_idx = make_splits(
-        all_idx,
-        TRAIN_SPLIT,
-        VAL_SPLIT,
-        seed=42
-    )
+#     train_idx, val_idx, test_idx = make_splits(
+#         all_idx,
+#         TRAIN_SPLIT,
+#         VAL_SPLIT,
+#         seed=42
+#     )
 
-    # --- save cache ---
-    save_dataset_cache(
-        DATA_CACHE,
-        full_ds.Ca,
-        full_ds.Si,
-        full_ds.Y,
-        train_idx,
-        val_idx,
-        test_idx
-    )
+#     # --- save cache ---
+#     save_dataset_cache(
+#         DATA_CACHE,
+#         full_ds.Ca,
+#         full_ds.Si,
+#         full_ds.Y,
+#         train_idx,
+#         val_idx,
+#         test_idx
+#     )
 
 
 # ============================================================
 # DATASET RANGE CHECK
 # ============================================================
-print("\n=== DATASET STATS ===")
+# print("\n=== DATASET STATS ===")
 
-print("Ca  min/max:", np.nanmin(full_ds.Ca), np.nanmax(full_ds.Ca))
-print("Si  min/max:", np.nanmin(full_ds.Si), np.nanmax(full_ds.Si))
-print("Y   min/max:", np.nanmin(full_ds.Y),  np.nanmax(full_ds.Y))
+# print("Ca  min/max:", np.nanmin(full_ds.Ca), np.nanmax(full_ds.Ca))
+# print("Si  min/max:", np.nanmin(full_ds.Si), np.nanmax(full_ds.Si))
+# print("Y   min/max:", np.nanmin(full_ds.Y),  np.nanmax(full_ds.Y))
 
 # ---- per-parameter ranges ----
-ltau = full_ds.Y.shape[1] // 4
+# ltau = full_ds.Y.shape[1] // 4
 
-temp  = full_ds.Y[:, :ltau]
-vlos  = full_ds.Y[:, ltau:2*ltau]
-vturb = full_ds.Y[:, 2*ltau:3*ltau]
-blong = full_ds.Y[:, 3*ltau:]
+# temp  = full_ds.Y[:, :ltau]
+# vlos  = full_ds.Y[:, ltau:2*ltau]
+# vturb = full_ds.Y[:, 2*ltau:3*ltau]
+# blong = full_ds.Y[:, 3*ltau:]
 
-print("\n--- PER VARIABLE ---")
-print("Temp  min/max:", np.nanmin(temp),  np.nanmax(temp))
-print("Vlos  min/max:", np.nanmin(vlos),  np.nanmax(vlos))
-print("Vturb min/max:", np.nanmin(vturb), np.nanmax(vturb))
-print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
+# print("\n--- PER VARIABLE ---")
+# print("Temp  min/max:", np.nanmin(temp),  np.nanmax(temp))
+# print("Vlos  min/max:", np.nanmin(vlos),  np.nanmax(vlos))
+# print("Vturb min/max:", np.nanmin(vturb), np.nanmax(vturb))
+# print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
 
 # ============================================================
 # TRAINING-TIME TARGET RANGE CHECK
 # ============================================================
-print("\n=== TRAINING TARGET STATS ===")
+# print("\n=== TRAINING TARGET STATS ===")
 
-Ncheck = len(full_ds)
-idxs = np.linspace(0, len(full_ds)-1, Ncheck, dtype=int)
+# Ncheck = len(full_ds)
+# idxs = np.linspace(0, len(full_ds)-1, Ncheck, dtype=int)
 
-print ("Ncheck: {}".format(Ncheck))
-y_all = []
+# print ("Ncheck: {}".format(Ncheck))
+# y_all = []
 
-for i in idxs:
-    _, _, y = full_ds[i]
-    y_all.append(y.numpy())
+# for i in idxs:
+#     _, _, y = full_ds[i]
+#     y_all.append(y.numpy())
 
-y_all = np.stack(y_all)
+# y_all = np.stack(y_all)
 
-print("Y(train) global min/max:",
-      np.nanmin(y_all),
-      np.nanmax(y_all))
+# print("Y(train) global min/max:",
+#       np.nanmin(y_all),
+#       np.nanmax(y_all))
 
-ltau = y_all.shape[1] // 4
+# ltau = y_all.shape[1] // 4
 
-temp  = y_all[:, :ltau]
-vlos  = y_all[:, ltau:2*ltau]
-vturb = y_all[:, 2*ltau:3*ltau]
-blong = y_all[:, 3*ltau:]
+# temp  = y_all[:, :ltau]
+# vlos  = y_all[:, ltau:2*ltau]
+# vturb = y_all[:, 2*ltau:3*ltau]
+# blong = y_all[:, 3*ltau:]
 
-print("\n--- TRAINING RANGES ---")
-print("Temp  min/max:", np.nanmin(temp),  np.nanmax(temp))
-print("Vlos  min/max:", np.nanmin(vlos),  np.nanmax(vlos))
-print("Vturb min/max:", np.nanmin(vturb), np.nanmax(vturb))
-print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
+# print("\n--- TRAINING RANGES ---")
+# print("Temp  min/max:", np.nanmin(temp),  np.nanmax(temp))
+# print("Vlos  min/max:", np.nanmin(vlos),  np.nanmax(vlos))
+# print("Vturb min/max:", np.nanmin(vturb), np.nanmax(vturb))
+# print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
 
 # ============================================================
 # STORE PHYSICAL TRAINING RANGES
@@ -356,39 +356,39 @@ print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
 # ============================================================
 # STORE TARGET RANGES USED FOR TRAINING
 # ============================================================
-TARGET_RANGES = {
-    "temp":  (np.nanmin(temp),  np.nanmax(temp)),
-    "vlos":  (np.nanmin(vlos),  np.nanmax(vlos)),
-    "vturb": (np.nanmin(vturb), np.nanmax(vturb)),
-    "blong": (np.nanmin(blong), np.nanmax(blong)),
-}
+# TARGET_RANGES = {
+#     "temp":  (np.nanmin(temp),  np.nanmax(temp)),
+#     "vlos":  (np.nanmin(vlos),  np.nanmax(vlos)),
+#     "vturb": (np.nanmin(vturb), np.nanmax(vturb)),
+#     "blong": (np.nanmin(blong), np.nanmax(blong)),
+# }
 
 # ============================================================
 # FINAL DATASETS
 # ============================================================
-train_ds = Subset(full_ds, train_idx)
-val_ds   = Subset(full_ds, val_idx)
-test_ds  = Subset(full_ds, test_idx)
+# train_ds = Subset(full_ds, train_idx)
+# val_ds   = Subset(full_ds, val_idx)
+# test_ds  = Subset(full_ds, test_idx)
 
 
 # # ============================================================
 # # 4. SPLITS
 # # ============================================================
-# train_idx, val_idx, test_idx = make_splits(
-#     valid_idx,
-#     TRAIN_SPLIT,
-#     VAL_SPLIT,
-#     seed=42,
-#     spatial_block=32   # optional but recommended
-# )
+train_idx, val_idx, test_idx = make_splits(
+    (t, y, x),
+    TRAIN_SPLIT,
+    VAL_SPLIT,
+    seed=42,
+    spatial_block=32   # optional but recommended
+)
 
-# train_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, train_idx)
-# val_ds   = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, val_idx)
-# test_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, test_idx)
+train_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, train_idx)
+val_ds   = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, val_idx)
+test_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, test_idx)
 
-# train_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, train_idx)
-# val_ds   = CaSiAtmosDataset(STIC_h5, ATM_H5, val_idx)
-# test_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, test_idx)
+train_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, train_idx)
+val_ds   = CaSiAtmosDataset(STIC_h5, ATM_H5, val_idx)
+test_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, test_idx)
 
 # ============================================================
 # 5. DATALOADERS (FINAL)
