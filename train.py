@@ -17,7 +17,7 @@ import numpy as np
 from config import *
 from data.datasets import CaSiAtmosDataset
 # from data.bifrostdataset import CaSiAtmosDataset
-from data.cacheddataset import CachedDataset
+# from data.cacheddataset import CachedDataset
 from utils.split import make_splits
 from models.model import CaSiInversionCNN
 from losses.loss import AtmosLoss
@@ -467,12 +467,12 @@ print("Stokes scale:", model_core.ca_encoder.w_stokes.squeeze())
 
 criterion = AtmosLoss(
     weights={
-        "temp": 5.0,
-        "vlos": 1.5,
-        "blong": 1.5,
-        "vturb": 0.1,
+        "temp": 1.0,
+        "vlos": 1.0,
+        "blong": 1.0,
+        "vturb": 1.0,
     },
-    vturb_zero_weight=5.0   # forces vturb → 0 strongly
+    vturb_zero_weight=0.0   # forces vturb → 0 strongly
 )
 
 if DO_TRAIN:

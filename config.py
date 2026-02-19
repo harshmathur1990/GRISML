@@ -38,10 +38,10 @@ OUTPUT_SCALES = {
 
 
 LOSS_WEIGHTS = {
-    "temp":  5.0,   # dominant physics
-    "vlos":  1.5,   # medium
-    "blong": 1.5,   # medium
-    "vturb": 0.2,   # weak (almost ignored)
+    "temp":  1.0,   # dominant physics
+    "vlos":  1.0,   # medium
+    "blong": 1.0,   # medium
+    "vturb": 1.0,   # weak (almost ignored)
 }
 
 LOGTEMP = True
