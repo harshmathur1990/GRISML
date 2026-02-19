@@ -377,9 +377,7 @@ def check_loader_ranges(loader, name, target_ranges=None, max_batches=50):
 train_idx, val_idx, test_idx = make_splits(
     (t, y, x),
     TRAIN_SPLIT,
-    VAL_SPLIT,
-    seed=42,
-    spatial_block=32   # optional but recommended
+    VAL_SPLIT
 )
 
 train_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, train_idx)
