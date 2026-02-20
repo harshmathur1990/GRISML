@@ -21,29 +21,29 @@ class CaSiAtmosDataset(Dataset):
         self.indices = indices
 
         # ---- FITS inputs ----
-        self.ca_hdul = fits.open(ca_fits, memmap=True)
-        self.si_hdul = fits.open(si_fits, memmap=True)
+        self.Ca_hdul = fits.open(ca_fits, memmap=True)
+        self.Si_hdul = fits.open(si_fits, memmap=True)
 
-        self.ca = self.ca_hdul[0].data
-        self.si = self.si_hdul[0].data
+        self.Ca = self.Ca_hdul[0].data
+        self.Si = self.Si_hdul[0].data
 
         # ============================
         # NEW: handle missing time dim
         # ============================
-        if self.ca.ndim == 4:
+        if self.Ca.ndim == 4:
             # (s, y, x, λ) → pretend t=0
-            self.ca_has_time = False
-        elif self.ca.ndim == 5:
-            self.ca_has_time = True
+            self.Ca_has_time = False
+        elif self.Ca.ndim == 5:
+            self.Ca_has_time = True
         else:
-            raise ValueError(f"Unexpected Ca shape: {self.ca.shape}")
+            raise ValueError(f"Unexpected Ca shape: {self.Ca.shape}")
 
-        if self.si.ndim == 4:
-            self.si_has_time = False
-        elif self.si.ndim == 5:
-            self.si_has_time = True
+        if self.Si.ndim == 4:
+            self.Si_has_time = False
+        elif self.Si.ndim == 5:
+            self.Si_has_time = True
         else:
-            raise ValueError(f"Unexpected Si shape: {self.si.shape}")
+            raise ValueError(f"Unexpected Si shape: {self.Si.shape}")
 
         # ---- HDF5 outputs ----
         self.fatm = h5py.File(atm_h5, "r")
@@ -63,15 +63,15 @@ class CaSiAtmosDataset(Dataset):
         # ============================
         # NEW: time-safe indexing
         # ============================
-        ti_ca = t if self.ca_has_time else 0
-        ti_si = t if self.si_has_time else 0
+        ti_ca = t if self.Ca_has_time else 0
+        ti_si = t if self.Si_has_time else 0
 
         # ---- input ----
-        ca = self.ca[ti_ca, STOKES_IDX, y, x, :] if self.ca_has_time \
-             else self.ca[STOKES_IDX, y, x, :]
+        ca = self.Ca[ti_ca, STOKES_IDX, y, x, :] if self.Ca_has_time \
+             else self.Ca[STOKES_IDX, y, x, :]
 
-        si = self.si[ti_si, STOKES_IDX, y, x, :] if self.si_has_time \
-             else self.si[STOKES_IDX, y, x, :]
+        si = self.Si[ti_si, STOKES_IDX, y, x, :] if self.Si_has_time \
+             else self.Si[STOKES_IDX, y, x, :]
 
         # ---- output (normalised) ----
         Y = np.concatenate([
