@@ -318,15 +318,21 @@ print("\n=== DATASET STATS ===")
 
 print("Ca  min/max:", np.nanmin(full_ds.Ca), np.nanmax(full_ds.Ca))
 print("Si  min/max:", np.nanmin(full_ds.Si), np.nanmax(full_ds.Si))
-print("Y   min/max:", np.nanmin(full_ds.Y),  np.nanmax(full_ds.Y))
+# print("Y   min/max:", np.nanmin(full_ds.Y),  np.nanmax(full_ds.Y))
 
 # ---- per-parameter ranges ----
-ltau = full_ds.Y.shape[1] // 4
+# ltau = full_ds.Y.shape[1] // 4
 
-temp  = full_ds.Y[:, :ltau]
-vlos  = full_ds.Y[:, ltau:2*ltau]
-vturb = full_ds.Y[:, 2*ltau:3*ltau]
-blong = full_ds.Y[:, 3*ltau:]
+# temp  = full_ds.Y[:, :ltau]
+# vlos  = full_ds.Y[:, ltau:2*ltau]
+# vturb = full_ds.Y[:, 2*ltau:3*ltau]
+# blong = full_ds.Y[:, 3*ltau:]
+
+temp  = full_ds.temp
+vlos  = full_ds.vlos
+vturb = full_ds.vturb
+blong = full_ds.blong
+
 
 print("\n--- PER VARIABLE ---")
 print("Temp  min/max:", np.nanmin(temp),  np.nanmax(temp))
