@@ -292,77 +292,6 @@ def check_loader_ranges(loader, name, target_ranges=None, max_batches=50):
 #         test_idx
 #     )
 
-
-# ============================================================
-# DATASET RANGE CHECK
-# ============================================================
-# print("\n=== DATASET STATS ===")
-
-# print("Ca  min/max:", np.nanmin(full_ds.Ca), np.nanmax(full_ds.Ca))
-# print("Si  min/max:", np.nanmin(full_ds.Si), np.nanmax(full_ds.Si))
-# print("Y   min/max:", np.nanmin(full_ds.Y),  np.nanmax(full_ds.Y))
-
-# ---- per-parameter ranges ----
-# ltau = full_ds.Y.shape[1] // 4
-
-# temp  = full_ds.Y[:, :ltau]
-# vlos  = full_ds.Y[:, ltau:2*ltau]
-# vturb = full_ds.Y[:, 2*ltau:3*ltau]
-# blong = full_ds.Y[:, 3*ltau:]
-
-# print("\n--- PER VARIABLE ---")
-# print("Temp  min/max:", np.nanmin(temp),  np.nanmax(temp))
-# print("Vlos  min/max:", np.nanmin(vlos),  np.nanmax(vlos))
-# print("Vturb min/max:", np.nanmin(vturb), np.nanmax(vturb))
-# print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
-
-# ============================================================
-# TRAINING-TIME TARGET RANGE CHECK
-# ============================================================
-# print("\n=== TRAINING TARGET STATS ===")
-
-# Ncheck = len(full_ds)
-# idxs = np.linspace(0, len(full_ds)-1, Ncheck, dtype=int)
-
-# print ("Ncheck: {}".format(Ncheck))
-# y_all = []
-
-# for i in idxs:
-#     _, _, y = full_ds[i]
-#     y_all.append(y.numpy())
-
-# y_all = np.stack(y_all)
-
-# print("Y(train) global min/max:",
-#       np.nanmin(y_all),
-#       np.nanmax(y_all))
-
-# ltau = y_all.shape[1] // 4
-
-# temp  = y_all[:, :ltau]
-# vlos  = y_all[:, ltau:2*ltau]
-# vturb = y_all[:, 2*ltau:3*ltau]
-# blong = y_all[:, 3*ltau:]
-
-# print("\n--- TRAINING RANGES ---")
-# print("Temp  min/max:", np.nanmin(temp),  np.nanmax(temp))
-# print("Vlos  min/max:", np.nanmin(vlos),  np.nanmax(vlos))
-# print("Vturb min/max:", np.nanmin(vturb), np.nanmax(vturb))
-# print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
-
-# ============================================================
-# STORE PHYSICAL TRAINING RANGES
-# ============================================================
-# ============================================================
-# STORE TARGET RANGES USED FOR TRAINING
-# ============================================================
-# TARGET_RANGES = {
-#     "temp":  (np.nanmin(temp),  np.nanmax(temp)),
-#     "vlos":  (np.nanmin(vlos),  np.nanmax(vlos)),
-#     "vturb": (np.nanmin(vturb), np.nanmax(vturb)),
-#     "blong": (np.nanmin(blong), np.nanmax(blong)),
-# }
-
 # ============================================================
 # FINAL DATASETS
 # ============================================================
@@ -370,10 +299,6 @@ def check_loader_ranges(loader, name, target_ranges=None, max_batches=50):
 # val_ds   = Subset(full_ds, val_idx)
 # test_ds  = Subset(full_ds, test_idx)
 
-
-# # ============================================================
-# # 4. SPLITS
-# # ============================================================
 train_idx, val_idx, test_idx = make_splits(
     (t, y, x),
     TRAIN_SPLIT,
@@ -384,9 +309,75 @@ train_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, train_idx)
 val_ds   = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, val_idx)
 test_ds = CaSiAtmosDataset(CA_FITS, SI_FITS, ATM_H5, test_idx)
 
-# train_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, train_idx)
-# val_ds   = CaSiAtmosDataset(STIC_h5, ATM_H5, val_idx)
-# test_ds = CaSiAtmosDataset(STIC_h5, ATM_H5, test_idx)
+full_ds = train_ds
+
+# ============================================================
+# DATASET RANGE CHECK
+# ============================================================
+print("\n=== DATASET STATS ===")
+
+print("Ca  min/max:", np.nanmin(full_ds.Ca), np.nanmax(full_ds.Ca))
+print("Si  min/max:", np.nanmin(full_ds.Si), np.nanmax(full_ds.Si))
+print("Y   min/max:", np.nanmin(full_ds.Y),  np.nanmax(full_ds.Y))
+
+# ---- per-parameter ranges ----
+ltau = full_ds.Y.shape[1] // 4
+
+temp  = full_ds.Y[:, :ltau]
+vlos  = full_ds.Y[:, ltau:2*ltau]
+vturb = full_ds.Y[:, 2*ltau:3*ltau]
+blong = full_ds.Y[:, 3*ltau:]
+
+print("\n--- PER VARIABLE ---")
+print("Temp  min/max:", np.nanmin(temp),  np.nanmax(temp))
+print("Vlos  min/max:", np.nanmin(vlos),  np.nanmax(vlos))
+print("Vturb min/max:", np.nanmin(vturb), np.nanmax(vturb))
+print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
+
+# ============================================================
+# TRAINING-TIME TARGET RANGE CHECK
+# ============================================================
+# print("\n=== TRAINING TARGET STATS ===")
+
+Ncheck = len(full_ds)
+idxs = np.linspace(0, len(full_ds)-1, Ncheck, dtype=int)
+
+print ("Ncheck: {}".format(Ncheck))
+y_all = []
+
+for i in idxs:
+    _, _, y = full_ds[i]
+    y_all.append(y.numpy())
+
+y_all = np.stack(y_all)
+
+print("Y(train) global min/max:",
+      np.nanmin(y_all),
+      np.nanmax(y_all))
+
+ltau = y_all.shape[1] // 4
+
+temp  = y_all[:, :ltau]
+vlos  = y_all[:, ltau:2*ltau]
+vturb = y_all[:, 2*ltau:3*ltau]
+blong = y_all[:, 3*ltau:]
+
+print("\n--- TRAINING RANGES ---")
+print("Temp  min/max:", np.nanmin(temp),  np.nanmax(temp))
+print("Vlos  min/max:", np.nanmin(vlos),  np.nanmax(vlos))
+print("Vturb min/max:", np.nanmin(vturb), np.nanmax(vturb))
+print("Blong min/max:", np.nanmin(blong), np.nanmax(blong))
+
+# ============================================================
+# STORE TARGET RANGES USED FOR TRAINING
+# ============================================================
+TARGET_RANGES = {
+    "temp":  (np.nanmin(temp),  np.nanmax(temp)),
+    "vlos":  (np.nanmin(vlos),  np.nanmax(vlos)),
+    "vturb": (np.nanmin(vturb), np.nanmax(vturb)),
+    "blong": (np.nanmin(blong), np.nanmax(blong)),
+}
+
 
 # ============================================================
 # 5. DATALOADERS (FINAL)
@@ -413,9 +404,9 @@ test_loader = DataLoader(
 )
 
 
-# check_loader_ranges(train_loader, "TRAIN", TARGET_RANGES, max_batches=200)
-# check_loader_ranges(val_loader,   "VAL",   TARGET_RANGES, max_batches=200)
-# check_loader_ranges(test_loader,  "TEST",  TARGET_RANGES, max_batches=200)
+check_loader_ranges(train_loader, "TRAIN", TARGET_RANGES, max_batches=200)
+check_loader_ranges(val_loader,   "VAL",   TARGET_RANGES, max_batches=200)
+check_loader_ranges(test_loader,  "TEST",  TARGET_RANGES, max_batches=200)
 
 # ============================================================
 # 7. MODEL
@@ -465,15 +456,7 @@ print("Ca λ mask shape:", model_core.ca_encoder.w_lambda.shape)
 print("Si λ mask shape:", model_core.si_encoder.w_lambda.shape)
 print("Stokes scale:", model_core.ca_encoder.w_stokes.squeeze())
 
-criterion = AtmosLoss(
-    weights={
-        "temp": 1.0,
-        "vlos": 1.0,
-        "blong": 1.0,
-        "vturb": 1.0,
-    },
-    vturb_zero_weight=0.0   # forces vturb → 0 strongly
-)
+criterion = torch.nn.MSELoss()
 
 if DO_TRAIN:
     optim = torch.optim.Adam(model.parameters(), lr=LR)

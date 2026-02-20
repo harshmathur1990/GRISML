@@ -44,7 +44,7 @@ LOSS_WEIGHTS = {
     "vturb": 1.0,   # weak (almost ignored)
 }
 
-LOGTEMP = True
+LOGTEMP = False
 
 OUTPUT_MULTIPLIERS = {
     "vlos": 1e-1,     # shrink km/s range
@@ -52,14 +52,14 @@ OUTPUT_MULTIPLIERS = {
     "blong": 1e1,   # magnetic fields often huge
 }
 
-APPLY_OUTPUT_RESCALE = True
+APPLY_OUTPUT_RESCALE = False
 
 # config.py
 
 # ============================================================
 # RUN CONTROL
 # ============================================================
-DO_TRAIN = False     # False → skip training, only load best model + validate/test
+DO_TRAIN = True     # False → skip training, only load best model + validate/test
 TRACK_PRED = True
 
 EARLY_STOPPING_PATIENCE = 10
